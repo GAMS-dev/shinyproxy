@@ -1,3 +1,4 @@
 /target/
+.DS_STORE
 /shinyproxy.log
 /application.yml
