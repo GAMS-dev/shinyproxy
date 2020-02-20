@@ -104,8 +104,7 @@ public abstract class BaseController {
 	}
 	
 	protected void prepareMap(ModelMap map, HttpServletRequest request) {
-		map.put("title", environment.getProperty("proxy.title", "ShinyProxy"));
-		map.put("logo", resolveImageURI(environment.getProperty("proxy.logo-url")));
+		map.put("title", environment.getProperty("proxy.title", "GAMS MIRO"));
 		map.put("showNavbar", !Boolean.valueOf(environment.getProperty("proxy.hide-navbar")));
 		
 		map.put("bootstrapCss", "/webjars/bootstrap/3.3.7/css/bootstrap.min.css");
