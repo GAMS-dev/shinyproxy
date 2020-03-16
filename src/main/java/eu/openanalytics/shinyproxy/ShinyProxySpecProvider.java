@@ -93,6 +93,9 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 	@Value("${proxy.super-admin}")
 	private String superAdmin;
 
+	@Value("${proxy.super-admin-password}")
+	private String superAdminPass;
+
 	@Value("${proxy.api-version}")
 	private String apiVersion;
 	
@@ -136,6 +139,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 
 					if ( authMethod.equals("none") ) {
 						containerEnv.put("SHINYPROXY_NOAUTH", "true");
+						containerEnv.put("SHINYPROXY_PASSWORD", superAdminPass);
 					}
 					specTmp.setContainerEnv(containerEnv);
 
