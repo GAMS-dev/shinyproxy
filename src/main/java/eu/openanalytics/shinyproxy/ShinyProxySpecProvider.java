@@ -99,8 +99,17 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 	@Value("${proxy.api-version}")
 	private String apiVersion;
 	
-	@Value("${proxy.gams.host}")
-	private String gamsHost;
+	@Value("${proxy.engine.host}")
+	private String engineHost;
+
+	@Value("${proxy.engine.ns}")
+	private String engineNs;
+
+	@Value("${proxy.engine.user}")
+	private String engineUser;
+
+	@Value("${proxy.engine.password}")
+	private String enginePassword;
 	
 	@Value("${proxy.database.host}")
 	private String dbHost;
@@ -128,7 +137,10 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 				for(ShinyProxySpec specTmp : specsTmp){
 					specTmp.setContainerNetwork(containerNetwork);
 					Map<String, String> containerEnv = specTmp.getContainerEnv();
-					containerEnv.put("MIRO_GAMS_HOST", gamsHost);
+					containerEnv.put("MIRO_ENGINE_HOST", engineHost);
+					containerEnv.put("MIRO_ENGINE_NAMESPACE", engineNs);
+					containerEnv.put("MIRO_ENGINE_ADMIN_USER", engineUser);
+					containerEnv.put("MIRO_ENGINE_ADMIN_PASS", enginePassword);
 					containerEnv.put("MIRO_DB_HOST", dbHost);
 					containerEnv.put("MIRO_DB_PORT", dbPort);
 					containerEnv.put("MIRO_DB_NAME", dbName);
