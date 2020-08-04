@@ -95,9 +95,6 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 
 	@Value("${proxy.super-admin-password}")
 	private String superAdminPass;
-
-	@Value("${proxy.api-version}")
-	private String apiVersion;
 	
 	@Value("${proxy.engine.host}")
 	private String engineHost;
@@ -162,7 +159,6 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 
 					if ( specTmp.getId().equals("admin") ) {
 						specTmp.setContainerImage(containerAdminImage);
-						containerEnv.put("MIRO_API_VERSION", apiVersion);
 					} else {
 						specTmp.setContainerImage(containerImage);
 					}
