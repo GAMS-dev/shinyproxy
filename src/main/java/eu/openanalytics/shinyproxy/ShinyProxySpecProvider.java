@@ -70,7 +70,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 	private long specsFileTs = 0;
 
 	@Value("${proxy.authentication}")
-	private String authMethod;
+	private String authentication;
 	
 	@Value("${proxy.docker.miro-image-name}")
 	private String containerImage;
@@ -146,7 +146,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 					containerEnv.put("MIRO_ADMIN_USER", superAdmin);
 					containerEnv.put("MIRO_LANG", miroLang);
 
-					if ( authMethod.equals("none") ) {
+					if ( authentication.equals("none") ) {
 						containerEnv.put("SHINYPROXY_NOAUTH", "true");
 						containerEnv.put("SHINYPROXY_PASSWORD", superAdminPass);
 					}
