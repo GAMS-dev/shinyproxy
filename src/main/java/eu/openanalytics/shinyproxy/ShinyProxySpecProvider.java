@@ -21,6 +21,9 @@
 package eu.openanalytics.shinyproxy;
 
 import java.io.IOException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,11 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -41,6 +44,20 @@ import eu.openanalytics.containerproxy.model.spec.ContainerSpec;
 import eu.openanalytics.containerproxy.model.spec.ProxyAccessControl;
 import eu.openanalytics.containerproxy.model.spec.ProxySpec;
 import eu.openanalytics.containerproxy.spec.IProxySpecProvider;
+import eu.openanalytics.shinyproxy.ShinyProxySpecProvider.ShinyProxySpec;
+
+
+class Dummy {
+	public List<ShinyProxySpec> specs;
+
+	public List<ShinyProxySpec> getSpecs() {
+		return specs;
+	}
+	
+	public void setSpecs(List<ShinyProxySpec> specs) {
+		this.specs = specs;
+	}
+}
 
 /**
  * This component converts proxy specs from the 'ShinyProxy notation' into the 'ContainerProxy' notation.
@@ -51,19 +68,112 @@ import eu.openanalytics.containerproxy.spec.IProxySpecProvider;
  */
 @Component
 @Primary
-@ConfigurationProperties(prefix = "proxy")
 public class ShinyProxySpecProvider implements IProxySpecProvider {
 
 	private List<ProxySpec> specs = new ArrayList<>();
+	private long specsFileTs = 0;
+
+	@Value("${proxy.authentication}")
+	private String authentication;
 	
-	@PostConstruct
-	public void afterPropertiesSet() {
-		this.specs.stream().collect(Collectors.groupingBy(ProxySpec::getId)).forEach((id, duplicateSpecs) -> {
-			if (duplicateSpecs.size() > 1) throw new IllegalArgumentException(String.format("Configuration error: spec with id '%s' is defined multiple times", id));
-		});
-	}
+	@Value("${proxy.docker.miro-image-name}")
+	private String containerImage;
+	
+	@Value("${proxy.docker.admin-image-name}")
+	private String containerAdminImage;
+
+	@Value("${proxy.docker.container-network}")
+	private String containerNetwork;
+	
+	@Value("${proxy.model-dir}")
+	private String modelDir;
+
+	@Value("${proxy.data-dir}")
+	private String dataDir;
+
+	@Value("${proxy.miro-lang}")
+	private String miroLang;
+
+	@Value("${proxy.super-admin}")
+	private String superAdmin;
+
+	@Value("${proxy.super-admin-password}")
+	private String superAdminPass;
+	
+	@Value("${proxy.engine.host}")
+	private String engineHost;
+
+	@Value("${proxy.engine.ns}")
+	private String engineNs;
+
+	@Value("${proxy.engine.user}")
+	private String engineUser;
+
+	@Value("${proxy.engine.password}")
+	private String enginePassword;
+	
+	@Value("${proxy.database.host}")
+	private String dbHost;
+	
+	@Value("${proxy.database.port}")
+	private String dbPort;
+		
+	@Value("${proxy.database.name}")
+	private String dbName;
+	
+	@Value("${proxy.database.username}")
+	private String dbUname;
+	
+	@Value("${proxy.database.password}")
+	private String dbPass;
 	
 	public List<ProxySpec> getSpecs() {
+		try { 
+			File specsFile = new File("data/specs.yaml");
+			if ( specsFile.lastModified() > specsFileTs) {
+				Yaml yaml = new Yaml(new Constructor(Dummy.class));
+				specsFileTs = specsFile.lastModified();
+				Dummy obj = yaml.load(new FileInputStream(specsFile));
+				List<ShinyProxySpec> specsTmp = obj.getSpecs();
+				for(ShinyProxySpec specTmp : specsTmp){
+					specTmp.setContainerNetwork(containerNetwork);
+					Map<String, String> containerEnv = specTmp.getContainerEnv();
+					containerEnv.put("MIRO_ENGINE_HOST", engineHost);
+					containerEnv.put("MIRO_ENGINE_NAMESPACE", engineNs);
+					containerEnv.put("MIRO_ENGINE_ADMIN_USER", engineUser);
+					containerEnv.put("MIRO_ENGINE_ADMIN_PASS", enginePassword);
+					containerEnv.put("MIRO_DB_HOST", dbHost);
+					containerEnv.put("MIRO_DB_PORT", dbPort);
+					containerEnv.put("MIRO_DB_NAME", dbName);
+					containerEnv.put("MIRO_DB_USERNAME", dbUname);
+					containerEnv.put("MIRO_DB_PASSWORD", dbPass);
+					containerEnv.put("MIRO_ADMIN_USER", superAdmin);
+					containerEnv.put("MIRO_LANG", miroLang);
+
+					if ( authentication.equals("none") ) {
+						containerEnv.put("SHINYPROXY_NOAUTH", "true");
+						containerEnv.put("SHINYPROXY_PASSWORD", superAdminPass);
+					}
+					specTmp.setContainerEnv(containerEnv);
+
+					String volumesTmp[] = specTmp.getContainerVolumes();
+					volumesTmp[0] = modelDir.concat(volumesTmp[0]);
+					volumesTmp[1] = dataDir.concat(volumesTmp[1]);
+					specTmp.setContainerVolumes(volumesTmp);
+
+					if ( specTmp.getId().equals("admin") ) {
+						specTmp.setContainerImage(containerAdminImage);
+					} else {
+						specTmp.setContainerImage(containerImage);
+					}
+				}
+				
+				specs = specsTmp.stream().map(ShinyProxySpecProvider::convert).collect(Collectors.toList());
+			}
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
 		return new ArrayList<>(specs);
 	}
 	
@@ -72,11 +182,11 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 		return specs.stream().filter(s -> id.equals(s.getId())).findAny().orElse(null);
 	}
 	
-	public void setSpecs(List<ShinyProxySpec> specs) {
-		this.specs = specs.stream().map(ShinyProxySpecProvider::convert).collect(Collectors.toList());
+	public void setSpecs(List<ProxySpec> specs) {
+		this.specs = specs;
 	}
 	
-	private static ProxySpec convert(ShinyProxySpec from) {
+	public static ProxySpec convert(ShinyProxySpec from) {
 		ProxySpec to = new ProxySpec();
 		to.setId(from.getId());
 		to.setDisplayName(from.getDisplayName());

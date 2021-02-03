@@ -24,9 +24,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;q
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,6 +44,8 @@ import eu.openanalytics.containerproxy.util.Retrying;
 @Controller
 public class AppController extends BaseController {
 
+	private Logger log = LogManager.getLogger(AppController.class);
+
 	@Inject
 	private ProxyMappingManager mappingManager;
 	
@@ -52,6 +56,7 @@ public class AppController extends BaseController {
 		Proxy proxy = findUserProxy(request);
 		awaitReady(proxy);
 
+		log.info(String.format("Received GET request at endpoint: /app/ for model: %s. Container path: %s", getAppTitle(request), buildContainerPath(request)));
 		map.put("appTitle", getAppTitle(request));
 		map.put("container", (proxy == null) ? "" : buildContainerPath(request));
 		
@@ -63,7 +68,8 @@ public class AppController extends BaseController {
 	public Map<String,String> startApp(HttpServletRequest request) {
 		Proxy proxy = getOrStart(request);
 		String containerPath = buildContainerPath(request);
-		
+
+		log.info(String.format("Received POST request at endpoint: /app/ for proxy id: %s. Container path: %s", proxy.getId(), containerPath));
 		Map<String,String> response = new HashMap<>();
 		response.put("containerPath", containerPath);
 		response.put("proxyId", proxy.getId());
@@ -100,11 +106,14 @@ public class AppController extends BaseController {
 	private Proxy getOrStart(HttpServletRequest request) {
 		Proxy proxy = findUserProxy(request);
 		if (proxy == null) {
+			log.info("No proxy found. New proxy will be started.");
 			String specId = getAppName(request);
 			ProxySpec spec = proxyService.getProxySpec(specId);
 			if (spec == null) throw new IllegalArgumentException("Unknown proxy spec: " + specId);
 			ProxySpec resolvedSpec = proxyService.resolveProxySpec(spec, null, null);
 			proxy = proxyService.startProxy(resolvedSpec, false);
+		}else {
+			log.info("Existing proxy found.");
 		}
 		return proxy;
 	}

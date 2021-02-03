@@ -39,27 +39,6 @@ body > div#navbar { padding-top: 0px; }
 	padding-top: 0px;
 }
 
-@media screen and (max-width: 768px) {
-	#navbar + div { padding-top: 150px; }
-	#navbar + iframe { padding-top: 150px; }
-	#applist {
-		padding-top: 150px;
-	}
- 	#new-version-banner {
-		margin-top: 150px;
- 	}
-}
-
-@media screen and (max-width: 360px) {
-    #navbar + div { padding-top: 200px; }
-    #navbar + iframe { padding-top: 200px; }
-	#applist {
-		padding-top: 200px;
-	}
- 	#new-version-banner {
-		margin-top: 200px;
- 	}
-}
 
 #shinyframe {
   border: none;
