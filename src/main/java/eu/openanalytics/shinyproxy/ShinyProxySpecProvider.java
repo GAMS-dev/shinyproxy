@@ -2,6 +2,7 @@
  * ShinyProxy
  *
  * Copyright (C) 2016-2020 Open Analytics
+ * Modifications copyright (C) GAMS Development Corp. <support@gams.com>
  *
  * ===========================================================================
  *
@@ -106,11 +107,11 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 	@Value("${proxy.engine.ns}")
 	private String engineNs;
 
-	@Value("${proxy.engine.user}")
-	private String engineUser;
+	@Value("${proxy.engine.anonymous-user}")
+	private String engineAnonymousUser;
 
-	@Value("${proxy.engine.password}")
-	private String enginePassword;
+	@Value("${proxy.engine.anonymous-pwd}")
+	private String engineAnonymousPass;
 	
 	@Value("${proxy.database.host}")
 	private String dbHost;
@@ -140,8 +141,6 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 					Map<String, String> containerEnv = specTmp.getContainerEnv();
 					containerEnv.put("MIRO_ENGINE_HOST", engineHost);
 					containerEnv.put("MIRO_ENGINE_NAMESPACE", engineNs);
-					containerEnv.put("MIRO_ENGINE_ADMIN_USER", engineUser);
-					containerEnv.put("MIRO_ENGINE_ADMIN_PASS", enginePassword);
 					containerEnv.put("MIRO_DB_HOST", dbHost);
 					containerEnv.put("MIRO_DB_PORT", dbPort);
 					containerEnv.put("MIRO_DB_NAME", dbName);
@@ -153,6 +152,8 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 					if ( authentication.equals("none") ) {
 						containerEnv.put("SHINYPROXY_NOAUTH", "true");
 						containerEnv.put("SHINYPROXY_PASSWORD", superAdminPass);
+						containerEnv.put("MIRO_ENGINE_ANONYMOUS_USER", engineAnonymousUser);
+						containerEnv.put("MIRO_ENGINE_ANONYMOUS_PASS", engineAnonymousPass);
 					}
 					specTmp.setContainerEnv(containerEnv);
 
