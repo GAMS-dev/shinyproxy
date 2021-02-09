@@ -96,12 +96,6 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 
 	@Value("${proxy.miro-lang}")
 	private String miroLang;
-
-	@Value("${proxy.super-admin}")
-	private String superAdmin;
-
-	@Value("${proxy.super-admin-password}")
-	private String superAdminPass;
 	
 	@Value("${proxy.engine.host}")
 	private String engineHost;
@@ -148,12 +142,10 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 					containerEnv.put("MIRO_DB_NAME", dbName);
 					containerEnv.put("MIRO_DB_USERNAME", dbUname);
 					containerEnv.put("MIRO_DB_PASSWORD", dbPass);
-					containerEnv.put("MIRO_ADMIN_USER", superAdmin);
 					containerEnv.put("MIRO_LANG", miroLang);
 
 					if ( authentication.equals("none") ) {
 						containerEnv.put("SHINYPROXY_NOAUTH", "true");
-						containerEnv.put("SHINYPROXY_PASSWORD", superAdminPass);
 						containerEnv.put("MIRO_ENGINE_ANONYMOUS_USER", engineAnonymousUser);
 						containerEnv.put("MIRO_ENGINE_ANONYMOUS_PASS", engineAnonymousPass);
 					}
