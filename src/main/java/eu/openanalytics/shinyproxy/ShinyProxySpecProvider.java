@@ -142,7 +142,10 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 					containerEnv.put("MIRO_DB_NAME", dbName);
 					containerEnv.put("MIRO_DB_USERNAME", dbUname);
 					containerEnv.put("MIRO_DB_PASSWORD", dbPass);
-					containerEnv.put("MIRO_LANG", miroLang);
+
+					if ( !containerEnv.containsKey("MIRO_LANG") ) {
+						containerEnv.put("MIRO_LANG", miroLang);
+					}
 
 					if ( authentication.equals("none") ) {
 						containerEnv.put("SHINYPROXY_NOAUTH", "true");
