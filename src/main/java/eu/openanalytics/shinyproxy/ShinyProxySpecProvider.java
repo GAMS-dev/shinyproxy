@@ -1,7 +1,7 @@
 /**
  * ShinyProxy
  *
- * Copyright (C) 2016-2020 Open Analytics
+ * Copyright (C) 2016-2021 Open Analytics
  *
  * ===========================================================================
  *
@@ -34,8 +34,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import eu.openanalytics.containerproxy.util.SessionHelper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -123,6 +130,20 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 	
 	@Value("${proxy.database.password}")
 	private String dbPass;
+
+	private static Environment environment;
+
+	@Autowired
+	public void setEnvironment(Environment env){
+		ShinyProxySpecProvider.environment = env;
+	}
+	
+	@PostConstruct
+	public void afterPropertiesSet() {
+		this.specs.stream().collect(Collectors.groupingBy(ProxySpec::getId)).forEach((id, duplicateSpecs) -> {
+			if (duplicateSpecs.size() > 1) throw new IllegalArgumentException(String.format("Configuration error: spec with id '%s' is defined multiple times", id));
+		});
+	}
 	
 	public List<ProxySpec> getSpecs() {
 		try { 
@@ -186,6 +207,11 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 	public void setSpecs(List<ProxySpec> specs) {
 		this.specs = specs;
 	}
+
+	private static String getPublicPath(String appName) {
+		String contextPath = SessionHelper.getContextPath(environment, true);
+		return contextPath + "app_direct/" + appName + "/";
+	}
 	
 	public static ProxySpec convert(ShinyProxySpec from) {
 		ProxySpec to = new ProxySpec();
@@ -211,7 +237,15 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 		ContainerSpec cSpec = new ContainerSpec();
 		cSpec.setImage(from.getContainerImage());
 		cSpec.setCmd(from.getContainerCmd());
-		cSpec.setEnv(from.getContainerEnv());
+
+		Map<String, String> env = from.getContainerEnv();
+		if (env == null) {
+			env = new HashMap<>();
+		}
+
+		env.put("SHINYPROXY_PUBLIC_PATH", getPublicPath(from.getId()));
+		cSpec.setEnv(env);
+
 		cSpec.setEnvFile(from.getContainerEnvFile());
 		cSpec.setNetwork(from.getContainerNetwork());
 		cSpec.setNetworkConnections(from.getContainerNetworkConnections());
