@@ -140,8 +140,6 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 					containerEnv.put("MIRO_DB_HOST", dbHost);
 					containerEnv.put("MIRO_DB_PORT", dbPort);
 					containerEnv.put("MIRO_DB_NAME", dbName);
-					containerEnv.put("MIRO_DB_USERNAME", dbUname);
-					containerEnv.put("MIRO_DB_PASSWORD", dbPass);
 
 					if ( !containerEnv.containsKey("MIRO_LANG") ) {
 						containerEnv.put("MIRO_LANG", miroLang);
@@ -151,6 +149,11 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 						containerEnv.put("SHINYPROXY_NOAUTH", "true");
 						containerEnv.put("MIRO_ENGINE_ANONYMOUS_USER", engineAnonymousUser);
 						containerEnv.put("MIRO_ENGINE_ANONYMOUS_PASS", engineAnonymousPass);
+					}
+
+					if ( specTmp.getId().equals("admin") ) {
+						containerEnv.put("MIRO_DB_USERNAME", dbUname);
+						containerEnv.put("MIRO_DB_PASSWORD", dbPass);
 					}
 					specTmp.setContainerEnv(containerEnv);
 
