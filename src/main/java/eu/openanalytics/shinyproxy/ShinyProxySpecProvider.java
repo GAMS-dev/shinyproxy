@@ -101,8 +101,11 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 	@Value("${proxy.data-dir}")
 	private String dataDir;
 
-	@Value("${proxy.miro-lang}")
+	@Value("${proxy.miro-lang:en}")
 	private String miroLang;
+
+	@Value("${proxy.force-signed-apps:false}")
+	private boolean forceSignedApps;
 	
 	@Value("${proxy.engine.host}")
 	private String engineHost;
@@ -175,6 +178,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 					if ( specTmp.getId().equals("admin") ) {
 						containerEnv.put("MIRO_DB_USERNAME", dbUname);
 						containerEnv.put("MIRO_DB_PASSWORD", dbPass);
+						containerEnv.put("MIRO_ENFORCE_SIGNED_APPS", Boolean.toString(forceSignedApps));
 					}
 					specTmp.setContainerEnv(containerEnv);
 
