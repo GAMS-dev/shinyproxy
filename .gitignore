@@ -3,3 +3,5 @@
 /shinyproxy.log
 /application.yml
 /.project
+*.gz
+
