@@ -20,7 +20,9 @@
  * You should have received a copy of the Apache License
  * along with this program.  If not, see <http://www.apache.org/licenses/>
  */
-
+/**
+ * Modifications copyright (C) GAMS Development Corp. <support@gams.com>
+ */
 
 Shiny = window.Shiny || {};
 Shiny.app = {
@@ -31,7 +33,7 @@ Shiny.app = {
         appInstanceName: null,
         containerPath: null,
         webSocketReconnectionMode: null,
-        maxReloadAttempts: 10,
+        maxReloadAttempts: 3,
         heartBeatRate: null,
         maxInstances: null,
         shinyForceFullReload: null,
@@ -44,8 +46,8 @@ Shiny.app = {
         tryingToReconnect: false,
         reloadAttempts: 0,
         reloadDismissed: false,
-        updateSecondsIntervalId: null,
         websocketConnections: [],
+        suspendHeartbeat: false,
         lastHeartbeatTime: null,
         appStopped: false,
     },
@@ -67,11 +69,9 @@ Shiny.app = {
         Shiny.app.staticState.appInstanceName = appInstanceName;
         Shiny.app.staticState.maxInstances = parseInt(maxInstances, 10);
         Shiny.app.staticState.shinyForceFullReload = shinyForceFullReload;
-        Shiny.instances._template = Handlebars.templates.switch_instances;
 
         function internalStart() {
             if (containerPath === "") {
-                Shiny.ui.setShinyFrameHeight();
                 Shiny.ui.showLoading();
                 $.post(window.location.pathname + window.location.search, function (response) {
                     Shiny.app.staticState.containerPath = response.containerPath;
@@ -82,9 +82,9 @@ Shiny.app = {
                     Shiny.connections.startHeartBeats();
                 }).fail(function (request) {
                     if (!Shiny.app.runtimeState.navigatingAway) {
-                        var newDoc = document.open("text/html", "replace");
-                        newDoc.write(request.responseText);
-                        newDoc.close();
+                        console.log(request.responseText);
+                        $("#loadingAnimation").hide();
+                        $("#loadAppError").show();
                     }
                 });
             } else {
@@ -112,30 +112,3 @@ Shiny.app = {
 window.onbeforeunload = function () {
     window.Shiny.app.runtimeState.navigatingAway = true;
 };
-
-window.addEventListener("resize", function () {
-    Shiny.ui.setShinyFrameHeight();
-});
-
-$(window).on('load', function () {
-    Shiny.ui.setShinyFrameHeight();
-
-    $('#switchInstancesModal-btn').click(function () {
-        Shiny.instances.eventHandlers.onShow();
-    });
-
-    $('#newInstanceForm').submit(function (e) {
-        e.preventDefault();
-        Shiny.instances.eventHandlers.onNewInstance();
-    });
-
-    $('#switchInstancesModal').on('shown.bs.modal', function () {
-        setTimeout(function () {
-            $("#instanceNameField").focus();
-        }, 10);
-    });
-    
-    $('#switchInstancesModal').on('hide.bs.modal', function () {
-        Shiny.instances.eventHandlers.onClose();
-    });
-});

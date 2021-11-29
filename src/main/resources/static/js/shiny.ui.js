@@ -18,19 +18,21 @@
  * You should have received a copy of the Apache License
  * along with this program.  If not, see <http://www.apache.org/licenses/>
  */
+ /**
+ * Modifications copyright (C) GAMS Development Corp. <support@gams.com>
+ */
 Shiny = window.Shiny || {};
 Shiny.ui = {
     /***
      * Setups the iframe of the application.
      */
     setupIframe: function () {
-        var $iframe = $('<iframe id="shinyframe" width="100%" style="display:none;" frameBorder="0"></iframe>')
+        var $iframe = $('<iframe id="shinyframe" width="100%" style="display:none;overflow:hidden;height:100vh;" frameBorder="0"></iframe>')
         // IMPORTANT: start the injector before setting the `src` property of the iframe
         // This is required to ensure that the polling catches all events and therefore the injector works properly.
-        Shiny.connections.startInjector();
+        // Shiny.connections.startInjector();
         $iframe.attr("src", Shiny.app.staticState.containerPath);
         $('#iframeinsert').before($iframe); // insert the iframe into the HTML.
-        Shiny.ui.setShinyFrameHeight();
     },
 
     /**
@@ -48,7 +50,7 @@ Shiny.ui = {
     showReconnecting: function() {
         $('#appStopped').hide();
         $('#shinyframe').hide();
-        $("#reconnecting").show();
+        $("#loading").show();
     },
 
     /**
@@ -56,59 +58,21 @@ Shiny.ui = {
      */
     showFrame: function () {
         $('#shinyframe').show();
-        $("#loading").fadeOut("slow");
-        $("#reconnecting").fadeOut("slow");
-    },
-
-    /**
-     * Update the frame height.
-     */
-    setShinyFrameHeight: function () {
-        $('#shinyframe').css('height', ($(window).height()) + 'px');
-    },
-
-    updateLoadingTxt: function () {
-        if (Shiny.app.runtimeState.updateSecondsIntervalId !== null) {
-            clearInterval(Shiny.app.runtimeState.updateSecondsIntervalId);
-        }
-
-        function updateSeconds(seconds) {
-            if (seconds < 0) {
-                clearInterval(Shiny.app.runtimeState.updateSecondsIntervalId);
-                return;
-            }
-            if (seconds === 0) {
-                $('#retryInXSeconds').hide();
-                $('#retryNow').show();
-            } else {
-                $('#retryNow').hide();
-                $('#retryInXSeconds').show();
-                $('.retrySeconds').text(seconds);
-            }
-        }
-
-        $('.reloadAttempts').text(Shiny.app.runtimeState.reloadAttempts);
-        $('.maxReloadAttempts').text(Shiny.app.staticState.maxReloadAttempts);
-        updateSeconds(Shiny.app.runtimeState.reloadAttempts);
-
-        var currentSeconds = Shiny.app.runtimeState.reloadAttempts;
-        Shiny.app.runtimeState.updateSecondsIntervalId = setInterval(() => {
-            currentSeconds--;
-            updateSeconds(currentSeconds);
-        }, 1000);
+        $("#loading").fadeOut("slow", () => {
+            $("#loadingAnimation").show();
+            $("#loadAppError").hide();
+        });
     },
 
     showFailedToReloadPage: function () {
         $('#shinyframe').hide();
         $("#loading").hide();
-        $("#reconnecting").hide();
         $("#reloadFailed").show();
     },
 
     showStoppedPage: function() {
         $('#shinyframe').remove();
-        $("#reconnecting").hide();
-        $('#switchInstancesModal').modal('hide')
+        $("#loading").hide();
         $('#appStopped').show();
     },
 
@@ -116,15 +80,9 @@ Shiny.ui = {
         if (!Shiny.app.runtimeState.navigatingAway) {
             // only show it when not navigating away, e.g. when logging out in the current tab
             $('#shinyframe').remove();
-            $("#reconnecting").hide();
-            $('#switchInstancesModal').modal('hide')
-            $("#navbar").hide();
+            $("#loading").hide();
             $('#userLoggedOut').show();
         }
-    },
-
-    hideInstanceModal: function() {
-        $('#switchInstancesModal').modal('hide');
     },
 
     removeFrame() {
