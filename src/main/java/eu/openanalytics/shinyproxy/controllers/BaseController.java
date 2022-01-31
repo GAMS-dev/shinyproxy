@@ -114,6 +114,7 @@ public abstract class BaseController {
 		map.put("title", environment.getProperty("proxy.title", "GAMS MIRO"));
 		map.put("showNavbar", !Boolean.valueOf(environment.getProperty("proxy.hide-navbar")));
 		
+		map.put("themeCss", "/assets/css/themes/" + environment.getProperty("proxy.theme", "default") + ".css");
 		map.put("bootstrapCss", "/webjars/bootstrap/3.4.1/css/bootstrap.min.css");
 		map.put("bootstrapJs", "/webjars/bootstrap/3.4.1/js/bootstrap.min.js");
 		map.put("jqueryJs", "/webjars/jquery/3.5.1/jquery.min.js");
