@@ -110,6 +110,9 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 	@Value("${proxy.miro-lang:en}")
 	private String miroLang;
 
+	@Value("${proxy.theme:default}")
+	private String miroTheme;
+
 	@Value("${proxy.force-signed-apps:false}")
 	private boolean forceSignedApps;
 	
@@ -174,6 +177,10 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 
 					if ( !containerEnv.containsKey("MIRO_LANG") ) {
 						containerEnv.put("MIRO_LANG", miroLang);
+					}
+
+					if ( !containerEnv.containsKey("MIRO_THEME") ) {
+						containerEnv.put("MIRO_THEME", miroTheme);
 					}
 
 					if ( authentication.equals("none") ) {
