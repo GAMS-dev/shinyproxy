@@ -20,8 +20,31 @@
  */
 package eu.openanalytics.shinyproxy.runtimevalues;
 
-public enum WebsocketReconnectionMode {
-    None,
-    Auto,
-    Confirm
+import eu.openanalytics.containerproxy.model.runtime.runtimevalues.RuntimeValueKey;
+
+public class UserTimeZoneKey extends RuntimeValueKey<String>  {
+
+    public UserTimeZoneKey() {
+        super("openanalytics.eu/sp-user-timezone",
+                "SHINYPROXY_USER_TIMEZONE",
+                false,
+                true, // include as annotation so that the value can be recovered
+                false,
+                true,
+                true,
+                false,
+                String.class);
+    }
+
+    public static UserTimeZoneKey inst = new UserTimeZoneKey();
+
+    @Override
+    public String deserializeFromString(String value) {
+        return value;
+    }
+
+    @Override
+    public String serializeToString(String value) {
+        return value;
+    }
 }

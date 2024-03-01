@@ -1,7 +1,7 @@
 /*
  * ShinyProxy
  *
- * Copyright (C) 2016-2021 Open Analytics
+ * Copyright (C) 2016-2023 Open Analytics
  *
  * ===========================================================================
  *
@@ -28,10 +28,7 @@ Shiny.ui = {
      */
     setupIframe: function () {
         var $iframe = $('<iframe id="shinyframe" width="100%" style="display:none;overflow:hidden;height:100vh;" frameBorder="0"></iframe>')
-        // IMPORTANT: start the injector before setting the `src` property of the iframe
-        // This is required to ensure that the polling catches all events and therefore the injector works properly.
-        // Shiny.connections.startInjector();
-        $iframe.attr("src", Shiny.app.staticState.containerPath);
+        $iframe.attr("src", Shiny.app.runtimeState.containerPath);
         $('#iframeinsert').before($iframe); // insert the iframe into the HTML.
     },
 
@@ -47,7 +44,7 @@ Shiny.ui = {
     /**
      * Shows the reconnecting page.
      */
-    showReconnecting: function() {
+    showReconnecting: function () {
         $('#appStopped').hide();
         $('#shinyframe').hide();
         $("#loading").show();
@@ -64,28 +61,85 @@ Shiny.ui = {
         });
     },
 
-    showFailedToReloadPage: function () {
+    showResumingPage: function () {
         $('#shinyframe').hide();
-        $("#loading").hide();
-        $("#reloadFailed").show();
+        $("#loading").show();
     },
 
-    showStoppedPage: function() {
+    showStoppingPage: function () {
+        $('#shinyframe').hide();
+        $("#loading").show();
+    },
+
+    showPausingPage: function () {
+        $('#shinyframe').hide();
+        $("#loading").show();
+    },
+
+    showPausedAppPage: function () {
         $('#shinyframe').remove();
         $("#loading").hide();
-        $('#appStopped').show();
+        $('#appPaused').show();
+        $("#navbarWrapper").show();
     },
 
-    showLoggedOutPage: function() {
+    showFailedToReloadPage: function () {
+        $('#shinyframe').remove();
+        $("#loading").hide();
+        $("#reloadFailed").show();
+        $("#navbarWrapper").show();
+    },
+
+    showStartFailedPage: function () {
+        $('#shinyframe').hide();
+        $("#loading").hide();
+        $("#startFailed").show();
+        $("#navbarWrapper").show();
+    },
+
+    showStoppedPage: function () {
+        Shiny.app.runtimeState.appStopped = true;
+        $('#shinyframe').remove();
+        $("#loading").hide();
+        $("#navbarWrapper").show();
+        if (!$('#appCrashed').is(":visible")) {
+            $('#appStopped').show();
+        }
+    },
+
+    showCrashedPage: function () {
+        Shiny.app.runtimeState.appStopped = true;
+        $('#shinyframe').remove();
+        $("#loading").hide();
+        $('#appCrashed').show();
+        $("#navbarWrapper").show();
+    },
+
+    showLoggedOutPage: function () {
+        Shiny.app.runtimeState.appStopped = true;
         if (!Shiny.app.runtimeState.navigatingAway) {
             // only show it when not navigating away, e.g. when logging out in the current tab
             $('#shinyframe').remove();
             $("#loading").hide();
+            $("#navbar").hide();
             $('#userLoggedOut').show();
+            $("#navbarWrapper").show();
         }
     },
 
     removeFrame() {
         $('#shinyframe').remove();
+    },
+    
+    getTimeZone() {
+        try {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch {
+            return null;
+        }
     }
 }
+
+Handlebars.registerHelper('formatStatus', function (status) {
+    return Shiny.ui.formatStatus(status);
+});

@@ -1,7 +1,7 @@
 /*
  * ShinyProxy
  *
- * Copyright (C) 2016-2021 Open Analytics
+ * Copyright (C) 2016-2023 Open Analytics
  *
  * ===========================================================================
  *
@@ -31,13 +31,13 @@ Shiny.connections = {
      * in the last `Shiny.heartBeatRate` milliseconds.
      */
     startHeartBeats: function () {
+        Shiny.connections.sendHeartBeat(); // send heartbeat right after loading app to validate the app is working
         setInterval(function () {
             if (Shiny.app.runtimeState.appStopped || Shiny.app.runtimeState.suspendHeartbeat) {
                 return;
             }
             var lastHeartbeat = Date.now() - Shiny.app.runtimeState.lastHeartbeatTime;
-            if (lastHeartbeat > Shiny.app.staticState.heartBeatRate && Shiny.app.staticState.proxyId !== null) {
-
+            if (lastHeartbeat > Shiny.app.staticState.heartBeatRate && Shiny.app.runtimeState.proxy !== null) {
                 const _shinyFrame = document.getElementById('shinyframe');
                 if (typeof _shinyFrame.contentWindow.Shiny !== 'undefined' &&
                     typeof _shinyFrame.contentWindow.Shiny.shinyapp !== 'undefined' &&
@@ -55,6 +55,47 @@ Shiny.connections = {
                 });
             }
         }, Shiny.app.staticState.heartBeatRate);
+    },
+
+    /**
+     * Send heartbeat and process the result.
+     */
+    sendHeartBeat: function() {
+        // contextPath is guaranteed to end with a slash
+        $.post(Shiny.api.buildURL("heartbeat/" + Shiny.app.runtimeState.proxy.id), function() {})
+            .fail(function (response) {
+                if (Shiny.app.runtimeState.appStopped) {
+                    // if stopped in meantime -> ignore
+                    return;
+                }
+                if (response.status === 401) {
+                    Shiny.ui.showLoggedOutPage();
+                    return;
+                }
+                try {
+                    var res = JSON.parse(response.responseText);
+                    if (res !== null && res.status === "fail") {
+                        if (res.data === "app_stopped_or_non_existent") {
+                            Shiny.ui.showStoppedPage();
+                        } else if (res.data === "shinyproxy_authentication_required") {
+                            Shiny.ui.showLoggedOutPage();
+                        }
+                    }
+                } catch (error) {
+                    // server or connection crashed, let app reconnect
+                    // ignore JSON parsing error
+                }
+            });
+    },
+
+    startOpenidRefresh: function() {
+        setInterval(function() {
+            if (Shiny.app.runtimeState.proxy && Shiny.app.runtimeState.proxy.status === "Stopped") {
+                console.log("no openid refresh");
+                return;
+            }
+            $.post(Shiny.api.buildURL("refresh-openid"));
+        }, Shiny.app.staticState.openIdRefreshRate);
     },
 
     /**
@@ -79,13 +120,10 @@ Shiny.connections = {
         }
 
         // Check if the app has been stopped by another tab
-        Shiny.connections._checkAppHasBeenStopped(function (isStopped) {
-            //if (isStopped) {
-                // app was stopped, show stopped screen
-                Shiny.ui.showStoppedPage();
-                return;
-            //}
-            //Shiny.connections._reloadPage();
+        Shiny.connections._checkAppHasBeenStopped(function () {
+            // app was stopped, show stopped screen
+            Shiny.ui.showStoppedPage();
+            return;
         });
     },
 
@@ -99,7 +137,7 @@ Shiny.connections = {
                 typeof _shinyFrame.contentWindow.Shiny.shinyapp !== 'undefined' &&
                 typeof _shinyFrame.contentWindow.Shiny.shinyapp.reconnect === 'function') {
 
-                if (Shiny.app.staticState.shinyForceFullReload) {
+                if (Shiny.app.runtimeState.proxy.runtimeValues.SHINYPROXY_FORCE_FULL_RELOAD) {
                     // this is a Shiny app, but the forceFullReload option is set -> handle it as a non-Shiny app.
                     return false;
                 }
@@ -238,7 +276,7 @@ Shiny.connections = {
     _checkAppHasBeenStopped: function (cb) {
         $.ajax({
             method: 'POST',
-            url: Shiny.common.staticState.contextPath + "heartbeat/" + Shiny.app.staticState.proxyId,
+            url: Shiny.api.buildURL("heartbeat/" + Shiny.app.runtimeState.proxy.id),
             timeout: 3000,
             success: function () {
                 cb(false);
@@ -246,11 +284,11 @@ Shiny.connections = {
             error: function (response) {
                 try {
                     var res = JSON.parse(response.responseText);
-                    if (res !== null && res.status === "error") {
-                        if (res.message === "app_stopped_or_non_existent") {
+                    if (res !== null && res.status === "fail") {
+                        if (res.data === "app_stopped_or_non_existent") {
                             cb(true);
                             return;
-                        } else if (res.message === "shinyproxy_authentication_required") {
+                        } else if (res.data === "shinyproxy_authentication_required") {
                             Shiny.ui.showLoggedOutPage();
                             // never call call-back, but just redirect to login page
                             return;
@@ -264,6 +302,25 @@ Shiny.connections = {
             }
         });
 
-    }
+    },
+
+    _updateIframeUrl: function(url) {
+        if (!Shiny.app.runtimeState.proxy.runtimeValues.SHINYPROXY_TRACK_APP_URL) {
+            return;
+        }
+        if (Shiny.app.runtimeState.navigatingAway || Shiny.app.runtimeState.appStopped) {
+            return;
+        }
+        if (url === undefined || url === null) {
+            return;
+        }
+        if (url.startsWith(Shiny.app.runtimeState.baseFrameUrl)) {
+            const newUrl = url.replace(Shiny.app.runtimeState.baseFrameUrl, Shiny.app.runtimeState.parentFrameUrl);
+            window.history.replaceState(null, null, newUrl);
+        } else if (url.startsWith(Shiny.app.runtimeState.proxy.runtimeValues.SHINYPROXY_PUBLIC_PATH)) {
+            const newUrl = url.replace(Shiny.app.runtimeState.proxy.runtimeValues.SHINYPROXY_PUBLIC_PATH, Shiny.app.runtimeState.parentFrameUrl);
+            window.history.replaceState(null, null, newUrl);
+        }
+    },
 
 };

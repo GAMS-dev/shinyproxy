@@ -4,4 +4,7 @@
 /application.yml
 /.project
 *.gz
+.project
+.classpath
+.settings
 
