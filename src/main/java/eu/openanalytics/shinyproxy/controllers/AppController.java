@@ -77,6 +77,8 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -115,9 +117,7 @@ public class AppController extends BaseController {
 
 		Proxy proxy = findUserProxy(appRequestInfo);
 
-		String containerSubPath = buildContainerSubPath(request, appRequestInfo);
-
-		log.info(String.format("Received GET request at endpoint: /app/ for model: %s. Container path: %s", appRequestInfo.getAppName(), containerSubPath));
+		log.info(String.format("Received GET request at endpoint: /app/ for model: %s.", appRequestInfo.getAppName()));
 		ProxySpec spec = proxyService.getProxySpec(appRequestInfo.getAppName());
 		Optional<RedirectView> redirect = createRedirectIfRequired(request, appRequestInfo, proxy, spec);
 		if (redirect.isPresent()) {
@@ -132,11 +132,12 @@ public class AppController extends BaseController {
 		prepareMap(map, request);
 		map.put("heartbeatRate", getHeartbeatRate());
 		map.put("page", "app");
+		map.put("nonce", generateNonce());
 		map.put("appName", appRequestInfo.getAppName());
 		map.put("appInstance", appRequestInfo.getAppInstance());
 		map.put("appInstanceDisplayName", appRequestInfo.getAppInstanceDisplayName());
 		map.put("appPath", appRequestInfo.getAppPath());
-		map.put("containerSubPath", containerSubPath);
+		map.put("containerSubPath", buildContainerSubPath(request, appRequestInfo));
 		map.put("refreshOpenidEnabled", authenticationBackend.getName().equals(OpenIDAuthenticationBackend.NAME));
 		ParameterValues previousParameters = null;
 		if (proxy == null || proxy.getRuntimeObjectOrNull(DisplayNameKey.inst) == null) {
@@ -446,6 +447,13 @@ public class AppController extends BaseController {
 		ExpressionContext context = new ExpressionContext(templateEngine.getConfiguration(), null, map);
 		return templateEngine.process(template, context);
 	}
+
+	private String generateNonce() {
+        SecureRandom random = new SecureRandom();
+        byte[] nonceBytes = new byte[16];
+        random.nextBytes(nonceBytes);
+        return Base64.getEncoder().encodeToString(nonceBytes);
+    }
 
 	/**
 	 * Converts a proxy into an Object using {@link Views.UserApi} view, in order to hide security sensitive values.
