@@ -1,7 +1,7 @@
 /**
  * ShinyProxy
  *
- * Copyright (C) 2016-2023 Open Analytics
+ * Copyright (C) 2016-2024 Open Analytics
  *
  * ===========================================================================
  *
@@ -21,41 +21,20 @@
 package eu.openanalytics.shinyproxy;
 
 
-import eu.openanalytics.containerproxy.spec.IProxySpecProvider;
+import eu.openanalytics.containerproxy.spec.ISpecExtensionProvider;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 
+@Setter
+@Getter
 @Configuration
 @ConfigurationProperties(prefix = "proxy")
-public class ShinyProxySpecExtensionProvider {
+public class ShinyProxySpecExtensionProvider implements ISpecExtensionProvider<ShinyProxySpecExtension> {
 
     private List<ShinyProxySpecExtension> specs;
-
-    @Inject
-    private IProxySpecProvider proxySpecProvider;
-
-    @PostConstruct
-    public void postInit() {
-        if (specs == null) {
-            this.specs = new ArrayList<>();
-            return;
-        }
-        specs.forEach(specExtension -> {
-            proxySpecProvider.getSpec(specExtension.getId()).addSpecExtension(specExtension);
-        });
-    }
-
-    public void setSpecs(List<ShinyProxySpecExtension> specs) {
-        this.specs = specs;
-    }
-
-    public List<ShinyProxySpecExtension> getSpecs() {
-        return specs;
-    }
 
 }

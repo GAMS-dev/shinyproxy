@@ -18,9 +18,9 @@
  * You should have received a copy of the Apache License
  * along with this program.  If not, see <http://www.apache.org/licenses/>
  */
- /**
- * Modifications copyright (C) GAMS Development Corp. <support@gams.com>
- */
+/**
+* Modifications copyright (C) GAMS Development Corp. <support@gams.com>
+*/
 Shiny = window.Shiny || {};
 Shiny.connections = {
 
@@ -33,11 +33,11 @@ Shiny.connections = {
     startHeartBeats: function () {
         Shiny.connections.sendHeartBeat(); // send heartbeat right after loading app to validate the app is working
         setInterval(function () {
-            if (Shiny.app.runtimeState.appStopped || Shiny.app.runtimeState.suspendHeartbeat) {
+            if (Shiny.app.runtimeState.appStopped || Shiny.app.runtimeState.suspendHeartbeat || Shiny.app.runtimeState.proxy == null) {
                 return;
             }
-            var lastHeartbeat = Date.now() - Shiny.app.runtimeState.lastHeartbeatTime;
-            if (lastHeartbeat > Shiny.app.staticState.heartBeatRate && Shiny.app.runtimeState.proxy !== null) {
+            const lastHeartbeat = Date.now() - Shiny.app.runtimeState.lastHeartbeatTime;
+            if (Shiny.app.runtimeState.proxy.id !== Shiny.app.runtimeState.proxy.targetId || lastHeartbeat > Shiny.app.staticState.heartBeatRate) {
                 const _shinyFrame = document.getElementById('shinyframe');
                 if (typeof _shinyFrame.contentWindow.Shiny !== 'undefined' &&
                     typeof _shinyFrame.contentWindow.Shiny.shinyapp !== 'undefined' &&
@@ -60,9 +60,9 @@ Shiny.connections = {
     /**
      * Send heartbeat and process the result.
      */
-    sendHeartBeat: function() {
+    sendHeartBeat: function () {
         // contextPath is guaranteed to end with a slash
-        $.post(Shiny.api.buildURL("heartbeat/" + Shiny.app.runtimeState.proxy.id), function() {})
+        $.post(Shiny.api.buildURL("heartbeat/" + Shiny.app.runtimeState.proxy.id), function () { })
             .fail(function (response) {
                 if (Shiny.app.runtimeState.appStopped) {
                     // if stopped in meantime -> ignore
@@ -88,10 +88,9 @@ Shiny.connections = {
             });
     },
 
-    startOpenidRefresh: function() {
-        setInterval(function() {
+    startOpenidRefresh: function () {
+        setInterval(function () {
             if (Shiny.app.runtimeState.proxy && Shiny.app.runtimeState.proxy.status === "Stopped") {
-                console.log("no openid refresh");
                 return;
             }
             $.post(Shiny.api.buildURL("refresh-openid"));
@@ -110,21 +109,6 @@ Shiny.connections = {
             return;
         }
         Shiny.app.runtimeState.tryingToReconnect = true;
-        if (Shiny.app.runtimeState.reloadDismissed) {
-            // user already dismissed confirmation -> do not ask again
-            return;
-        }
-        if (Shiny.app.runtimeState.appStopped) {
-            // app has been stopped -> no need to reconnect
-            return;
-        }
-
-        // Check if the app has been stopped by another tab
-        Shiny.connections._checkAppHasBeenStopped(function () {
-            // app was stopped, show stopped screen
-            Shiny.ui.showStoppedPage();
-            return;
-        });
     },
 
     /**
@@ -167,8 +151,8 @@ Shiny.connections = {
         }
 
         // Check if the app has been stopped by ShinyProxy server (because of the timeout)
-        Shiny.connections._checkAppHasBeenStopped(function (isStopped) {
-            if (isStopped) {
+        Shiny.app.checkAppCrashedOrStopped().then((appStoppedOrCrashed) => {
+            if (appStoppedOrCrashed) {
                 Shiny.app.runtimeState.tryingToReconnect = false;
                 Shiny.app.runtimeState.reloadAttempts = 0;
                 Shiny.app.runtimeState.suspendHeartbeat = false;
@@ -227,7 +211,7 @@ Shiny.connections = {
     _checkReloadSucceeded: function (checks = 0) {
         var completed = document.getElementById('shinyframe').contentDocument !== null
             && document.getElementById('shinyframe').contentDocument.readyState === "complete"
-            && document.getElementById('shinyframe').contentDocument.baseURI !== "about:blank"
+            && document.getElementById('shinyframe').contentDocument.baseURI.includes("/app_proxy/")
             && !Shiny.connections._checkIfIframeHasStartupMessage();
 
         if (completed) {
@@ -273,38 +257,7 @@ Shiny.connections = {
         setTimeout(() => Shiny.connections._checkShinyReloadSucceeded(checks + 1), 250);
     },
 
-    _checkAppHasBeenStopped: function (cb) {
-        $.ajax({
-            method: 'POST',
-            url: Shiny.api.buildURL("heartbeat/" + Shiny.app.runtimeState.proxy.id),
-            timeout: 3000,
-            success: function () {
-                cb(false);
-            },
-            error: function (response) {
-                try {
-                    var res = JSON.parse(response.responseText);
-                    if (res !== null && res.status === "fail") {
-                        if (res.data === "app_stopped_or_non_existent") {
-                            cb(true);
-                            return;
-                        } else if (res.data === "shinyproxy_authentication_required") {
-                            Shiny.ui.showLoggedOutPage();
-                            // never call call-back, but just redirect to login page
-                            return;
-                        }
-                    }
-                } catch (e) {
-                    // carry-on
-                }
-
-                cb(false);
-            }
-        });
-
-    },
-
-    _updateIframeUrl: function(url) {
+    _updateIframeUrl: function (url) {
         if (!Shiny.app.runtimeState.proxy.runtimeValues.SHINYPROXY_TRACK_APP_URL) {
             return;
         }
