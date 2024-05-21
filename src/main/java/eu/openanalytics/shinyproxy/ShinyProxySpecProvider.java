@@ -98,8 +98,8 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     private static final String PROP_DEFAULT_MAX_INSTANCES = "proxy.default-max-instances";
     private static final String PROP_DEFAULT_ALWAYS_SWITCH_INSTANCE = "proxy.default-always-switch-instance";
     private static Environment environment;
-    private final Map<String, ProxySpec> specsMap = new HashMap<>();
-    private final Cache<String, Map<String, Integer>> maxInstancesCache;
+    private Map<String, ProxySpec> specsMap = new HashMap<>();
+    private Map<String, Integer> maxInstancesCache = new HashMap<>();
     private List<ProxySpec> specs = new ArrayList<>();
     private List<TemplateGroup> templateGroups = new ArrayList<>();
     private String defaultMaxInstances;
@@ -176,10 +176,10 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 
     public ShinyProxySpecProvider() {
         // cache maxInstances results for (at least) 60 minutes, since this never changes during the lifetime of a session
-        maxInstancesCache = Caffeine.newBuilder()
-            .scheduler(Scheduler.systemScheduler())
-            .expireAfterAccess(60, TimeUnit.MINUTES)
-            .build();
+        // maxInstancesCache = Caffeine.newBuilder()
+        //     .scheduler(Scheduler.systemScheduler())
+        //     .expireAfterAccess(60, TimeUnit.MINUTES)
+        //     .build();
     }
 
     @Autowired
@@ -201,6 +201,8 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
         try { 
 			File specsFile = new File("data/specs.yaml");
 			if ( specsFile.lastModified() > specsFileTs) {
+                specsMap = new HashMap<>();
+                maxInstancesCache = new HashMap<>();
                 Yaml yaml = new Yaml(new Constructor(Dummy.class, new LoaderOptions()));
 				specsFileTs = specsFile.lastModified();
 				Dummy obj = yaml.load(new FileInputStream(specsFile));
@@ -253,6 +255,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 				specs = specsTmp.stream().map(ShinyProxySpec::getProxySpec).collect(Collectors.toList());
                 specs.forEach(ProxySpec::setContainerIndex);
                 specs.forEach(spec -> specsMap.put(spec.getId(), spec));
+                specs.forEach(spec -> maxInstancesCache.put(spec.getId(), 1));
 			}
 			
 		} catch (FileNotFoundException e) {
@@ -311,30 +314,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     }
 
     public Map<String, Integer> getMaxInstances() {
-        String sessionId = Objects.requireNonNull(RequestContextHolder.getRequestAttributes()).getSessionId();
-        return maxInstancesCache.get(sessionId, s -> {
-            Authentication user = userService.getCurrentAuth();
-            SpecExpressionContext context = SpecExpressionContext.create(
-                user,
-                user.getPrincipal(),
-                user.getCredentials());
-
-            Map<String, Integer> result = new HashMap<>();
-
-            Integer resolvedDefault = expressionResolver.evaluateToInteger(defaultMaxInstances, context);
-
-            for (ProxySpec proxySpec : getSpecs()) {
-                // Integer maxInstances = proxySpec.getSpecExtension(ShinyProxySpecExtension.class).getMaxInstances().resolve(expressionResolver, context).getValueOrNull();
-                Integer maxInstances = 1;
-                if (maxInstances != null) {
-                    result.put(proxySpec.getId(), maxInstances);
-                } else {
-                    result.put(proxySpec.getId(), resolvedDefault);
-                }
-            }
-
-            return result;
-        });
+        return maxInstancesCache;
     }
 
     public Boolean getShinyForceFullReload(ProxySpec proxySpec) {
