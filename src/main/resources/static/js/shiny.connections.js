@@ -31,28 +31,16 @@ Shiny.connections = {
      * in the last `Shiny.heartBeatRate` milliseconds.
      */
     startHeartBeats: function () {
-        Shiny.connections.sendHeartBeat(); // send heartbeat right after loading app to validate the app is working
+        Shiny.connections.sendHeartBeat();
         setInterval(function () {
-            if (Shiny.app.runtimeState.appStopped || Shiny.app.runtimeState.suspendHeartbeat || Shiny.app.runtimeState.proxy == null) {
+            if (Shiny.app.runtimeState.appStopped || Shiny.app.runtimeState.proxy === null) {
                 return;
             }
-            const lastHeartbeat = Date.now() - Shiny.app.runtimeState.lastHeartbeatTime;
-            if (Shiny.app.runtimeState.proxy.id !== Shiny.app.runtimeState.proxy.targetId || lastHeartbeat > Shiny.app.staticState.heartBeatRate) {
-                const _shinyFrame = document.getElementById('shinyframe');
-                if (typeof _shinyFrame.contentWindow.Shiny !== 'undefined' &&
-                    typeof _shinyFrame.contentWindow.Shiny.shinyapp !== 'undefined' &&
-                    typeof _shinyFrame.contentWindow.Shiny.shinyapp.reconnect === 'function' &&
-                    _shinyFrame.contentWindow.Shiny.shinyapp.isConnected() === false) {
-                    Shiny.app.runtimeState.suspendHeartbeat = true;
-                    Shiny.connections.handleWebSocketError();
-                    return;
+            if (!Shiny.connections._webSocketConnectionIsOpen()) {
+                const lastHeartbeat = Date.now() - Shiny.app.runtimeState.lastHeartbeatTime;
+                if (Shiny.app.runtimeState.proxy.id !== Shiny.app.runtimeState.proxy.targetId || lastHeartbeat > Shiny.app.staticState.heartBeatRate) {
+                    Shiny.connections.sendHeartBeat();
                 }
-                Shiny.connections._checkAppHasBeenStopped(function (isStopped) {
-                    if (isStopped) {
-                        // app was stopped, show stopped screen
-                        Shiny.ui.showStoppedPage();
-                    }
-                });
             }
         }, Shiny.app.staticState.heartBeatRate);
     },
@@ -109,6 +97,19 @@ Shiny.connections = {
             return;
         }
         Shiny.app.runtimeState.tryingToReconnect = true;
+        Shiny.app.checkAppCrashedOrStopped().then((appStoppedOrCrashed) => {
+            if (!appStoppedOrCrashed) {
+                if (Shiny.app.runtimeState.reloadDismissed) {
+                    // user already dismissed confirmation -> do not ask again
+                    return;
+                }
+                if (Shiny.app.runtimeState.appStopped) {
+                    // app has been stopped -> no need to reconnect
+                    return;
+                }
+                Shiny.connections._reloadPage();
+            }
+        });
     },
 
     /**
@@ -155,7 +156,6 @@ Shiny.connections = {
             if (appStoppedOrCrashed) {
                 Shiny.app.runtimeState.tryingToReconnect = false;
                 Shiny.app.runtimeState.reloadAttempts = 0;
-                Shiny.app.runtimeState.suspendHeartbeat = false;
                 // app was stopped, show stopped screen
                 Shiny.ui.showStoppedPage();
                 return;
@@ -219,7 +219,6 @@ Shiny.connections = {
             Shiny.ui.showFrame();
             Shiny.app.runtimeState.tryingToReconnect = false;
             Shiny.app.runtimeState.reloadAttempts = 0;
-            Shiny.app.runtimeState.suspendHeartbeat = false;
             return;
         }
 
@@ -245,7 +244,6 @@ Shiny.connections = {
             $('#shinyframe').show();
             Shiny.app.runtimeState.tryingToReconnect = false;
             Shiny.app.runtimeState.reloadAttempts = 0;
-            Shiny.app.runtimeState.suspendHeartbeat = false;
             return;
         }
 
@@ -275,5 +273,18 @@ Shiny.connections = {
             window.history.replaceState(null, null, newUrl);
         }
     },
+
+    _webSocketConnectionIsOpen: function() {
+        const _shinyFrame = document.getElementById('shinyframe');
+        if (typeof _shinyFrame.contentWindow.Shiny !== 'undefined' &&
+            typeof _shinyFrame.contentWindow.Shiny.shinyapp !== 'undefined' &&
+            typeof _shinyFrame.contentWindow.Shiny.shinyapp.reconnect === 'function') {
+            if (_shinyFrame.contentWindow.Shiny.shinyapp.isConnected() === true) {
+                return true;
+            }
+            return false;
+        }
+        return false;
+    }
 
 };
