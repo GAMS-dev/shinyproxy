@@ -25,7 +25,7 @@ Shiny.api = {
      * @return {Promise.<Array.<Shiny.Proxy>>}
      */
     getProxies: async function () {
-        const resp = await fetch(Shiny.api.buildURL("api/proxy"));
+        const resp = await fetch(Shiny.api.buildURL("api_int/proxy"));
         const json = await Shiny.api._getResponseJson(resp);
         if (json === null) {
             return [];
@@ -36,7 +36,7 @@ Shiny.api = {
         if (parameters === null) {
             parameters = {};
         }
-        const resp = await fetch(Shiny.api.buildURL("api/proxy/" + proxyId + '/status'), {
+        const resp = await fetch(Shiny.api.buildURL("api_int/proxy/" + proxyId + '/status'), {
             method: 'PUT',
             body: JSON.stringify({"status": status, "parameters": parameters}),
             headers: {
@@ -49,7 +49,7 @@ Shiny.api = {
     async waitForStatusChange(proxyId) {
         let networkErrors = 0;
         while (true) {
-            const url = Shiny.api.buildURL('api/proxy/' + proxyId + "/status?watch=true&timeout=10");
+            const url = Shiny.api.buildURL('api_int/proxy/' + proxyId + "/status?watch=true&timeout=10");
             try {
                 const resp = await fetch(url);
                 const json = await Shiny.api._getResponseJson(resp);
@@ -72,7 +72,7 @@ Shiny.api = {
         }
     },
     async changeProxyUserid(proxyId, newUserId) {
-        const resp = await fetch(Shiny.api.buildURL("api/proxy/" + proxyId + '/userId'), {
+        const resp = await fetch(Shiny.api.buildURL("api_int/proxy/" + proxyId + '/userId'), {
             method: 'PUT',
             body: JSON.stringify({"userId": newUserId}),
             headers: {
@@ -83,7 +83,7 @@ Shiny.api = {
         return json !== null;
     },
     getProxyById: async function (proxyId) {
-        const resp = await fetch(Shiny.api.buildURL("api/proxy/" + proxyId));
+        const resp = await fetch(Shiny.api.buildURL("api_int/proxy/" + proxyId));
         const json = await Shiny.api._getResponseJson(resp);
         return json.data;
     },

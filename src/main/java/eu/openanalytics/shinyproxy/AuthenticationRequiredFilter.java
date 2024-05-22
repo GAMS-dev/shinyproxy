@@ -47,7 +47,7 @@ import java.io.IOException;
  * These endpoints are:
  * - /app_proxy/** (without spaces), i.e. any subpath on the app_direct endpoint (thus not the page that loads the app)
  * - /heartbeat/* , i.e. heartbeat requests
- * - /api/**
+ * - /api_int/**
  * - /admin/data
  * - /issue
  *
@@ -64,7 +64,7 @@ public class AuthenticationRequiredFilter extends GenericFilterBean {
     private static final RequestMatcher REQUEST_MATCHER = new OrRequestMatcher(
         new AntPathRequestMatcher("/app_proxy/**"),
         new AntPathRequestMatcher("/heartbeat/*"),
-        new AntPathRequestMatcher("/api/**"),
+        new AntPathRequestMatcher("/api_int/**"),
         new AntPathRequestMatcher("/admin/data"),
         new AntPathRequestMatcher("/issue")
     );
