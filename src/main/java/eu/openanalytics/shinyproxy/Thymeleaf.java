@@ -35,10 +35,10 @@ public class Thymeleaf {
     private ShinyProxySpecProvider shinyProxySpecProvider;
 
     public String getAppUrl(ProxySpec proxySpec) {
-        String externalUrl = proxySpec.getSpecExtension(ExternalAppSpecExtension.class).getExternalUrl();
-        if (externalUrl != null && !externalUrl.isBlank()) {
-            return externalUrl;
-        }
+        // String externalUrl = proxySpec.getSpecExtension(ExternalAppSpecExtension.class).getExternalUrl();
+        // if (externalUrl != null && !externalUrl.isBlank()) {
+        //     return externalUrl;
+        // }
 
         UriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentContextPath().pathSegment("app", proxySpec.getId());
 

@@ -447,10 +447,10 @@ public class AppController extends BaseController {
      */
     private Optional<RedirectView> createRedirectIfRequired(HttpServletRequest request, String subPath, ProxySpec spec) {
         // if it's an external app -> redirect
-        String externalUrl = spec.getSpecExtension(ExternalAppSpecExtension.class).getExternalUrl();
-        if (externalUrl != null) {
-            return Optional.of(new RedirectView(externalUrl));
-        }
+        // String externalUrl = spec.getSpecExtension(ExternalAppSpecExtension.class).getExternalUrl();
+        // if (externalUrl != null) {
+        //     return Optional.of(new RedirectView(externalUrl));
+        // }
 
         // if sub-path is empty or it's a slash -> no redirect required
         if (subPath.isEmpty() || subPath.equals("/")) {
