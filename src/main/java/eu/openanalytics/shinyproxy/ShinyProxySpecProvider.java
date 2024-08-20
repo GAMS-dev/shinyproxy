@@ -134,6 +134,9 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 	@Value("${proxy.force-signed-apps:false}")
 	private boolean forceSignedApps;
 
+    @Value("${proxy.max-upload-size:200}")
+	private Integer maxUploadSize;
+
 	@Value("${proxy.anonymous-readonly-mode:false}")
 	private boolean anonymousReadonlyMode;
 	
@@ -215,6 +218,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 					containerEnv.put("MIRO_DB_HOST", dbHost);
 					containerEnv.put("MIRO_DB_PORT", dbPort);
 					containerEnv.put("MIRO_DB_NAME", dbName);
+					containerEnv.put("MIRO_MAX_UPLOAD_SIZE", maxUploadSize);
 
 					if ( !containerEnv.containsKey("MIRO_LANG") ) {
 						containerEnv.put("MIRO_LANG", miroLang);
