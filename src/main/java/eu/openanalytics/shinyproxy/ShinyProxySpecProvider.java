@@ -218,7 +218,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 					containerEnv.put("MIRO_DB_HOST", dbHost);
 					containerEnv.put("MIRO_DB_PORT", dbPort);
 					containerEnv.put("MIRO_DB_NAME", dbName);
-					containerEnv.put("MIRO_MAX_UPLOAD_SIZE", maxUploadSize);
+					containerEnv.put("MIRO_MAX_UPLOAD_SIZE", Integer.toString(maxUploadSize));
 
 					if ( !containerEnv.containsKey("MIRO_LANG") ) {
 						containerEnv.put("MIRO_LANG", miroLang);
