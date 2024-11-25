@@ -23,6 +23,7 @@ package eu.openanalytics.shinyproxy;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
+import eu.openanalytics.containerproxy.backend.kubernetes.KubernetesSpecExtension;
 import eu.openanalytics.containerproxy.model.runtime.runtimevalues.CacheHeadersMode;
 import eu.openanalytics.containerproxy.model.runtime.runtimevalues.RuntimeValue;
 import eu.openanalytics.containerproxy.model.spec.AccessControl;
@@ -71,25 +72,39 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-
 class Dummy {
-	public List<ShinyProxySpec> specs;
+    public List<ShinyProxySpec> specs;
 
-	public List<ShinyProxySpec> getSpecs() {
-		return specs;
-	}
-	
-	public void setSpecs(List<ShinyProxySpec> specs) {
-		this.specs = specs;
-	}
+    public List<ShinyProxySpec> getSpecs() {
+        return specs;
+    }
+
+    public void setSpecs(List<ShinyProxySpec> specs) {
+        this.specs = specs;
+    }
+}
+
+class KubernetesSpecExtensionProviderDynamic {
+    public List<KubernetesSpecExtension> specs;
+
+    public List<KubernetesSpecExtension> getSpecs() {
+        return specs;
+    }
+
+    public void setSpecs(List<KubernetesSpecExtension> specs) {
+        this.specs = specs;
+    }
 }
 
 /**
- * This component converts proxy specs from the 'ShinyProxy notation' into the 'ContainerProxy' notation.
- * ShinyProxy notation is slightly more compact, and omits several things that Shiny apps do not need,
+ * This component converts proxy specs from the 'ShinyProxy notation' into the
+ * 'ContainerProxy' notation.
+ * ShinyProxy notation is slightly more compact, and omits several things that
+ * Shiny apps do not need,
  * such as definition of multiple containers.
  *
- * Also, if no port is specified, a port mapping is automatically created for Shiny port 3838.
+ * Also, if no port is specified, a port mapping is automatically created for
+ * Shiny port 3838.
  */
 @Component
 @Primary
@@ -107,65 +122,71 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 
     private long specsFileTs = 0;
 
-	@Value("${proxy.authentication}")
-	private String authentication;
-	
-	@Value("${proxy.docker.miro-image-name}")
-	private String containerImage;
-	
-	@Value("${proxy.docker.admin-image-name}")
-	private String containerAdminImage;
+    @Value("${proxy.authentication}")
+    private String authentication;
 
-	@Value("${proxy.docker.container-network}")
-	private String containerNetwork;
-	
-	@Value("${proxy.model-dir}")
-	private String modelDir;
+    @Value("${proxy.container-backend:docker}")
+    private String containerBackend;
 
-	@Value("${proxy.data-dir}")
-	private String dataDir;
+    @Value("${proxy.docker.miro-image-name}")
+    private String containerImage;
 
-	@Value("${proxy.miro-lang:en}")
-	private String miroLang;
+    @Value("${proxy.docker.admin-image-name}")
+    private String containerAdminImage;
 
-	@Value("${proxy.theme:default}")
-	private String miroTheme;
+    @Value("${proxy.docker.container-network}")
+    private String containerNetwork;
 
-	@Value("${proxy.force-signed-apps:false}")
-	private boolean forceSignedApps;
+    @Value("${proxy.model-dir}")
+    private String modelDir;
+
+    @Value("${proxy.data-dir}")
+    private String dataDir;
+
+    @Value("${proxy.miro-lang:en}")
+    private String miroLang;
+
+    @Value("${proxy.theme:default}")
+    private String miroTheme;
+
+    @Value("${proxy.force-signed-apps:false}")
+    private boolean forceSignedApps;
 
     @Value("${proxy.max-upload-size:200}")
-	private Integer maxUploadSize;
+    private Integer maxUploadSize;
 
-	@Value("${proxy.anonymous-readonly-mode:false}")
-	private boolean anonymousReadonlyMode;
-	
-	@Value("${proxy.engine.host}")
-	private String engineHost;
+    @Value("${proxy.anonymous-readonly-mode:false}")
+    private boolean anonymousReadonlyMode;
 
-	@Value("${proxy.engine.ns}")
-	private String engineNs;
+    @Value("${proxy.engine.host}")
+    private String engineHost;
 
-	@Value("${proxy.engine.anonymous-user}")
-	private String engineAnonymousUser;
+    @Value("${proxy.engine.ns}")
+    private String engineNs;
 
-	@Value("${proxy.engine.anonymous-pwd}")
-	private String engineAnonymousPass;
-	
-	@Value("${proxy.database.host}")
-	private String dbHost;
-	
-	@Value("${proxy.database.port}")
-	private String dbPort;
-		
-	@Value("${proxy.database.name}")
-	private String dbName;
-	
-	@Value("${proxy.database.username}")
-	private String dbUname;
-	
-	@Value("${proxy.database.password}")
-	private String dbPass;
+    @Value("${proxy.engine.anonymous-user}")
+    private String engineAnonymousUser;
+
+    @Value("${proxy.engine.anonymous-pwd}")
+    private String engineAnonymousPass;
+
+    @Value("${proxy.database.host}")
+    private String dbHost;
+
+    @Value("${proxy.database.port}")
+    private String dbPort;
+
+    @Value("${proxy.database.name}")
+    private String dbName;
+
+    @Value("${proxy.database.username}")
+    private String dbUname;
+
+    @Value("${proxy.database.password}")
+    private String dbPass;
+
+    @Value("${proxy.kubernetes.global-pod-patches:#{null}}")
+    private String globalPodPatchesStr;
 
     @Inject
     private SpecExpressionResolver expressionResolver;
@@ -178,11 +199,12 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     private List<ISpecExtensionProvider<?>> specExtensionProviders;
 
     public ShinyProxySpecProvider() {
-        // cache maxInstances results for (at least) 60 minutes, since this never changes during the lifetime of a session
+        // cache maxInstances results for (at least) 60 minutes, since this never
+        // changes during the lifetime of a session
         // maxInstancesCache = Caffeine.newBuilder()
-        //     .scheduler(Scheduler.systemScheduler())
-        //     .expireAfterAccess(60, TimeUnit.MINUTES)
-        //     .build();
+        // .scheduler(Scheduler.systemScheduler())
+        // .expireAfterAccess(60, TimeUnit.MINUTES)
+        // .build();
     }
 
     @Autowired
@@ -194,90 +216,105 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     public void afterPropertiesSet() {
         this.setSpecs();
         this.specs.stream().collect(Collectors.groupingBy(ProxySpec::getId)).forEach((id, duplicateSpecs) -> {
-            if (duplicateSpecs.size() > 1) throw new IllegalArgumentException(String.format("Configuration error: spec with id '%s' is defined multiple times", id));
+            if (duplicateSpecs.size() > 1)
+                throw new IllegalArgumentException(
+                        String.format("Configuration error: spec with id '%s' is defined multiple times", id));
         });
         defaultMaxInstances = environment.getProperty(PROP_DEFAULT_MAX_INSTANCES, String.class, "1");
-        defaultAlwaysSwitchInstance = environment.getProperty(PROP_DEFAULT_ALWAYS_SWITCH_INSTANCE, Boolean.class, false);
+        defaultAlwaysSwitchInstance = environment.getProperty(PROP_DEFAULT_ALWAYS_SWITCH_INSTANCE, Boolean.class,
+                false);
     }
 
     public List<ProxySpec> getSpecs() {
-        try { 
-			File specsFile = new File("data/specs.yaml");
-			if ( specsFile.lastModified() > specsFileTs) {
+        try {
+            File specsFile = new File("data/specs.yaml");
+            if (specsFile.lastModified() > specsFileTs) {
                 specsMap = new HashMap<>();
                 maxInstancesCache = new HashMap<>();
                 Yaml yaml = new Yaml(new Constructor(Dummy.class, new LoaderOptions()));
-				specsFileTs = specsFile.lastModified();
-				Dummy obj = yaml.load(new FileInputStream(specsFile));
-				List<ShinyProxySpec> specsTmp = obj.getSpecs();
-				for(ShinyProxySpec specTmp : specsTmp){
-					specTmp.setContainerNetwork(new SpelField.String(containerNetwork));
-					Map<String, String> containerEnv = specTmp.getContainerEnv();
-					containerEnv.put("MIRO_ENGINE_HOST", engineHost);
-					containerEnv.put("MIRO_ENGINE_NAMESPACE", engineNs);
-					containerEnv.put("MIRO_DB_HOST", dbHost);
-					containerEnv.put("MIRO_DB_PORT", dbPort);
-					containerEnv.put("MIRO_DB_NAME", dbName);
-					containerEnv.put("MIRO_MAX_UPLOAD_SIZE", Integer.toString(maxUploadSize));
+                specsFileTs = specsFile.lastModified();
+                Dummy obj = yaml.load(new FileInputStream(specsFile));
+                List<ShinyProxySpec> specsTmp = obj.getSpecs();
+                for (ShinyProxySpec specTmp : specsTmp) {
+                    Map<String, String> containerEnv = specTmp.getContainerEnv();
+                    containerEnv.put("MIRO_ENGINE_HOST", engineHost);
+                    containerEnv.put("MIRO_ENGINE_NAMESPACE", engineNs);
+                    containerEnv.put("MIRO_DB_HOST", dbHost);
+                    containerEnv.put("MIRO_DB_PORT", dbPort);
+                    containerEnv.put("MIRO_DB_NAME", dbName);
+                    containerEnv.put("MIRO_MAX_UPLOAD_SIZE", Integer.toString(maxUploadSize));
 
-					if ( !containerEnv.containsKey("MIRO_LANG") ) {
-						containerEnv.put("MIRO_LANG", miroLang);
-					}
+                    if (!containerEnv.containsKey("MIRO_LANG")) {
+                        containerEnv.put("MIRO_LANG", miroLang);
+                    }
 
-					if ( !containerEnv.containsKey("MIRO_THEME") ) {
-						containerEnv.put("MIRO_THEME", miroTheme);
-					}
+                    if (!containerEnv.containsKey("MIRO_THEME")) {
+                        containerEnv.put("MIRO_THEME", miroTheme);
+                    }
 
-					if ( authentication.equals("none") ) {
-						if ( anonymousReadonlyMode ) {
-							containerEnv.put("MIRO_MODE", "readonly");
-						}
-						containerEnv.put("SHINYPROXY_NOAUTH", "true");
-						containerEnv.put("MIRO_ENGINE_ANONYMOUS_USER", engineAnonymousUser);
-						containerEnv.put("MIRO_ENGINE_ANONYMOUS_PASS", engineAnonymousPass);
-					}
+                    if (authentication.equals("none")) {
+                        if (anonymousReadonlyMode) {
+                            containerEnv.put("MIRO_MODE", "readonly");
+                        }
+                        containerEnv.put("SHINYPROXY_NOAUTH", "true");
+                        containerEnv.put("MIRO_ENGINE_ANONYMOUS_USER", engineAnonymousUser);
+                        containerEnv.put("MIRO_ENGINE_ANONYMOUS_PASS", engineAnonymousPass);
+                    }
 
-					if ( specTmp.getId().equals("admin") ) {
-						containerEnv.put("MIRO_DB_USERNAME", dbUname);
-						containerEnv.put("MIRO_DB_PASSWORD", dbPass);
-						containerEnv.put("MIRO_ENFORCE_SIGNED_APPS", Boolean.toString(forceSignedApps));
-					}
-					specTmp.setContainerEnv(containerEnv);
+                    if (specTmp.getId().equals("admin")) {
+                        containerEnv.put("MIRO_DB_USERNAME", dbUname);
+                        containerEnv.put("MIRO_DB_PASSWORD", dbPass);
+                        containerEnv.put("MIRO_ENFORCE_SIGNED_APPS", Boolean.toString(forceSignedApps));
+                    }
+                    specTmp.setContainerEnv(containerEnv);
 
-					List<String> volumesTmp = specTmp.getContainerVolumes();
-					volumesTmp.set(0, modelDir.concat(volumesTmp.get(0)));
-					volumesTmp.set(1, dataDir.concat(volumesTmp.get(1)));
-					specTmp.setContainerVolumes(volumesTmp);
+                    if (containerBackend.equals("docker")) {
+                        specTmp.setContainerNetwork(new SpelField.String(containerNetwork));
+                        List<String> volumesTmp = specTmp.getContainerVolumes();
+                        volumesTmp.set(0, modelDir.concat(volumesTmp.get(0)));
+                        volumesTmp.set(1, dataDir.concat(volumesTmp.get(1)));
+                        specTmp.setContainerVolumes(volumesTmp);
+                    } else {
+                        // kubernetes
+                        specTmp.setContainerVolumes(Collections.emptyList());
+                    }
 
-					if ( specTmp.getId().equals("admin") ) {
-						specTmp.setContainerImage(new SpelField.String(containerAdminImage));
-					} else {
-						specTmp.setContainerImage(new SpelField.String(containerImage));
-					}
-				}
-				
-				specs = specsTmp.stream().map(ShinyProxySpec::getProxySpec).collect(Collectors.toList());
+                    if (specTmp.getId().equals("admin")) {
+                        specTmp.setContainerImage(new SpelField.String(containerAdminImage));
+                    } else {
+                        specTmp.setContainerImage(new SpelField.String(containerImage));
+                    }
+                }
+
+                specs = specsTmp.stream().map(ShinyProxySpec::getProxySpec).collect(Collectors.toList());
                 specs.forEach(ProxySpec::setContainerIndex);
+                if (containerBackend.equals("kubernetes") && globalPodPatchesStr != null) {
+                    KubernetesSpecExtension extension = KubernetesSpecExtension.builder()
+                            .kubernetesPodPatches(globalPodPatchesStr)
+                            .build();
+                    specs.forEach(spec -> spec.addSpecExtension(extension));
+                }
                 specs.forEach(spec -> specsMap.put(spec.getId(), spec));
                 specs.forEach(spec -> maxInstancesCache.put(spec.getId(), 1));
-			}
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		return new ArrayList<>(specs);
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>(specs);
     }
 
     public void setSpecs() {
-		this.specs = this.getSpecs();
-	}
+        this.specs = this.getSpecs();
+    }
 
     public void setSpecs(List<ShinyProxySpec> specs) {
         this.specs = this.getSpecs();
     }
 
     public ProxySpec getSpec(String id) {
-        if (id == null || id.isEmpty()) return null;
+        if (id == null || id.isEmpty())
+            return null;
         this.setSpecs();
         return specsMap.get(id);
     }
@@ -293,17 +330,21 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     public List<RuntimeValue> getRuntimeValues(ProxySpec proxy) {
         List<RuntimeValue> runtimeValues = new ArrayList<>();
 
-        // WebsocketReconnectionMode webSocketReconnectionMode = proxy.getSpecExtension(ShinyProxySpecExtension.class).getWebsocketReconnectionMode();
+        // WebsocketReconnectionMode webSocketReconnectionMode =
+        // proxy.getSpecExtension(ShinyProxySpecExtension.class).getWebsocketReconnectionMode();
         WebsocketReconnectionMode webSocketReconnectionMode = WebsocketReconnectionMode.Auto;
         if (webSocketReconnectionMode == null) {
-            runtimeValues.add(new RuntimeValue(WebSocketReconnectionModeKey.inst, environment.getProperty("proxy.default-websocket-reconnection-mode", WebsocketReconnectionMode.class, WebsocketReconnectionMode.None)));
+            runtimeValues.add(new RuntimeValue(WebSocketReconnectionModeKey.inst,
+                    environment.getProperty("proxy.default-websocket-reconnection-mode",
+                            WebsocketReconnectionMode.class, WebsocketReconnectionMode.None)));
         } else {
             runtimeValues.add(new RuntimeValue(WebSocketReconnectionModeKey.inst, webSocketReconnectionMode));
         }
 
         runtimeValues.add(new RuntimeValue(ShinyForceFullReloadKey.inst, getShinyForceFullReload(proxy)));
 
-        // Boolean trackAppUrl = proxy.getSpecExtension(ShinyProxySpecExtension.class).getTrackAppUrl();
+        // Boolean trackAppUrl =
+        // proxy.getSpecExtension(ShinyProxySpecExtension.class).getTrackAppUrl();
         Boolean trackAppUrl = false;
         if (trackAppUrl == null) {
             trackAppUrl = environment.getProperty("proxy.default-track-app-url", Boolean.class, false);
@@ -322,7 +363,8 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     }
 
     public Boolean getShinyForceFullReload(ProxySpec proxySpec) {
-        // Boolean shinyProxyForceFullReload = proxySpec.getSpecExtension(ShinyProxySpecExtension.class).getShinyForceFullReload();
+        // Boolean shinyProxyForceFullReload =
+        // proxySpec.getSpecExtension(ShinyProxySpecExtension.class).getShinyForceFullReload();
         Boolean shinyProxyForceFullReload = false;
         if (shinyProxyForceFullReload != null) {
             return shinyProxyForceFullReload;
@@ -330,9 +372,9 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
         return false;
     }
 
-
     public Boolean getHideNavbarOnMainPageLink(ProxySpec proxySpec) {
-        // Boolean hideNavbarOnMainPageLink = proxySpec.getSpecExtension(ShinyProxySpecExtension.class).getHideNavbarOnMainPageLink();
+        // Boolean hideNavbarOnMainPageLink =
+        // proxySpec.getSpecExtension(ShinyProxySpecExtension.class).getHideNavbarOnMainPageLink();
         Boolean hideNavbarOnMainPageLink = false;
         if (hideNavbarOnMainPageLink != null) {
             return hideNavbarOnMainPageLink;
@@ -341,7 +383,8 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     }
 
     public Boolean getAlwaysShowSwitchInstance(ProxySpec proxySpec) {
-        // Boolean alwaysShowSwitchInstance = proxySpec.getSpecExtension(ShinyProxySpecExtension.class).getAlwaysShowSwitchInstance();
+        // Boolean alwaysShowSwitchInstance =
+        // proxySpec.getSpecExtension(ShinyProxySpecExtension.class).getAlwaysShowSwitchInstance();
         Boolean alwaysShowSwitchInstance = null;
         if (alwaysShowSwitchInstance != null) {
             return alwaysShowSwitchInstance;
@@ -454,8 +497,8 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
         }
 
         public Map<String, String> getContainerEnv() {
-			return containerSpec.build().getEnv().getOriginalValue();
-		}
+            return containerSpec.build().getEnv().getOriginalValue();
+        }
 
         public void setContainerEnv(Map<String, String> containerEnv) {
             containerSpec.env(new SpelField.StringMap(containerEnv));
@@ -494,8 +537,8 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
         }
 
         public List<String> getContainerVolumes() {
-			return containerSpec.build().getVolumes().getOriginalValue();
-		}
+            return containerSpec.build().getVolumes().getOriginalValue();
+        }
 
         public void setContainerVolumes(List<String> containerVolumes) {
             containerSpec.volumes(new SpelField.StringList(containerVolumes));
