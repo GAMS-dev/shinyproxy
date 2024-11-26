@@ -167,7 +167,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     @Value("${proxy.engine.anonymous-user}")
     private String engineAnonymousUser;
 
-    @Value("${proxy.engine.anonymous-pwd}")
+    @Value("${proxy.engine.anonymous-pwd:${GMS_MIRO_ENGINE_ANONYMOUS_PWD:}}")
     private String engineAnonymousPass;
 
     @Value("${proxy.database.host}")
@@ -182,7 +182,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     @Value("${proxy.database.username}")
     private String dbUname;
 
-    @Value("${proxy.database.password}")
+    @Value("${proxy.database.password:${GMS_MIRO_DATABASE_PWD:}}")
     private String dbPass;
 
     @Value("${proxy.kubernetes.global-pod-patches:#{null}}")
