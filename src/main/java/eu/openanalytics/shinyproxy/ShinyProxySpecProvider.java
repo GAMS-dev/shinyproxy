@@ -188,6 +188,9 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     @Value("${proxy.kubernetes.global-pod-patches:#{null}}")
     private String globalPodPatchesStr;
 
+    @Value("${proxy.kubernetes.global-pod-patches-admin:#{null}}")
+    private String globalPodPatchesAdminStr;
+
     @Inject
     private SpecExpressionResolver expressionResolver;
 
@@ -292,7 +295,21 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
                     KubernetesSpecExtension extension = KubernetesSpecExtension.builder()
                             .kubernetesPodPatches(globalPodPatchesStr)
                             .build();
-                    specs.forEach(spec -> spec.addSpecExtension(extension));
+                    KubernetesSpecExtension extensionAdminTmp = extension;
+                    if (globalPodPatchesAdminStr != null) {
+                        extensionAdminTmp = KubernetesSpecExtension.builder()
+                            .kubernetesPodPatches(globalPodPatchesAdminStr)
+                            .build();
+                    }
+                    KubernetesSpecExtension extensionAdmin = extensionAdminTmp;
+
+                    specs.forEach(spec -> {
+                        if (spec.getId().equals("admin")) {
+                            spec.addSpecExtension(extensionAdmin);
+                        } else {
+                            spec.addSpecExtension(extension);
+                        }
+                    });
                 }
                 specs.forEach(spec -> specsMap.put(spec.getId(), spec));
                 specs.forEach(spec -> maxInstancesCache.put(spec.getId(), 1));
