@@ -21,6 +21,24 @@
 /**
 * Modifications copyright (C) GAMS Development Corp. <support@gams.com>
 */
+function waitForShinyFrameLoadingComplete(callback) {
+    const shinyFrame = document.getElementById('shinyframe');
+    if (!shinyFrame) {
+        console.error("#shinyframe iframe not found.");
+        return;
+    }
+    shinyFrame.onload = () => {
+        const shinyFrameDoc = shinyFrame.contentDocument || shinyFrame.contentWindow.document;
+        const intervalId = setInterval(() => {
+            const loadingScreen = shinyFrameDoc.querySelector('#loading-screen');
+            if (loadingScreen && getComputedStyle(loadingScreen).display === 'none') {
+                clearInterval(intervalId);
+                callback();
+            }
+        }, 500);
+    };
+}
+
 Shiny = window.Shiny || {};
 Shiny.ui = {
     /***
@@ -72,9 +90,11 @@ Shiny.ui = {
      */
     showFrame: function () {
         $('#shinyframe').show();
-        $("#loading").fadeOut("slow", () => {
-            $("#loadingAnimation").show();
-            $("#loadAppError").hide();
+        waitForShinyFrameLoadingComplete(() => {
+            $("#loading").fadeOut("slow", () => {
+                $("#loadingAnimation").show();
+                $("#loadAppError").hide();
+            });
         });
     },
 
