@@ -55,8 +55,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.representer.Representer;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -234,7 +236,9 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
             if (specsFile.lastModified() > specsFileTs) {
                 specsMap = new HashMap<>();
                 maxInstancesCache = new HashMap<>();
-                Yaml yaml = new Yaml(new Constructor(Dummy.class, new LoaderOptions()));
+                Representer representer = new Representer(new DumperOptions());
+                representer.getPropertyUtils().setSkipMissingProperties(true);
+                Yaml yaml = new Yaml(new Constructor(Dummy.class, new LoaderOptions()), representer);
                 specsFileTs = specsFile.lastModified();
                 Dummy obj = yaml.load(new FileInputStream(specsFile));
                 List<ShinyProxySpec> specsTmp = obj.getSpecs();
@@ -298,8 +302,8 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
                     KubernetesSpecExtension extensionAdminTmp = extension;
                     if (globalPodPatchesAdminStr != null) {
                         extensionAdminTmp = KubernetesSpecExtension.builder()
-                            .kubernetesPodPatches(globalPodPatchesAdminStr)
-                            .build();
+                                .kubernetesPodPatches(globalPodPatchesAdminStr)
+                                .build();
                     }
                     KubernetesSpecExtension extensionAdmin = extensionAdminTmp;
 
