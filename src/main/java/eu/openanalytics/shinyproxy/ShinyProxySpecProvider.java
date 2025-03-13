@@ -145,6 +145,9 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     @Value("${proxy.data-dir}")
     private String dataDir;
 
+    @Value("${proxy.specs-path:data/specs.yaml}")
+    private String specsPath;
+
     @Value("${proxy.miro-lang:en}")
     private String miroLang;
 
@@ -226,7 +229,8 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 
     public List<ProxySpec> getSpecs() {
         try {
-            File specsFile = new File("data/specs.yaml");
+            System.out.println(specsPath);
+            File specsFile = new File(specsPath);
             if (specsFile.lastModified() > specsFileTs) {
                 specsMap = new HashMap<>();
                 maxInstancesCache = new HashMap<>();
