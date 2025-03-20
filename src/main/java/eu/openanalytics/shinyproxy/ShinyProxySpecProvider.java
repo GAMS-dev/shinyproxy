@@ -229,7 +229,6 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 
     public List<ProxySpec> getSpecs() {
         try {
-            System.out.println(specsPath);
             File specsFile = new File(specsPath);
             if (specsFile.lastModified() > specsFileTs) {
                 specsMap = new HashMap<>();
