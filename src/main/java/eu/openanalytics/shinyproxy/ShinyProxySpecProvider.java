@@ -45,6 +45,9 @@ import eu.openanalytics.shinyproxy.runtimevalues.TrackAppUrl;
 import eu.openanalytics.shinyproxy.runtimevalues.WebSocketReconnectionModeKey;
 import eu.openanalytics.shinyproxy.runtimevalues.WebsocketReconnectionMode;
 import eu.openanalytics.shinyproxy.ShinyProxySpecProvider.ShinyProxySpec;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -65,6 +68,10 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -112,6 +119,7 @@ class KubernetesSpecExtensionProviderDynamic {
 @Primary
 public class ShinyProxySpecProvider implements IProxySpecProvider {
 
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private static final String PROP_DEFAULT_MAX_INSTANCES = "proxy.default-max-instances";
     private static final String PROP_DEFAULT_ALWAYS_SWITCH_INSTANCE = "proxy.default-always-switch-instance";
     private static Environment environment;
@@ -120,6 +128,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     private List<ProxySpec> specs = new ArrayList<>();
     private List<TemplateGroup> templateGroups = new ArrayList<>();
     private String defaultMaxInstances;
+    private String customThemeColors;
     private Boolean defaultAlwaysSwitchInstance;
 
     private long specsFileTs = 0;
@@ -216,6 +225,17 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
 
     @PostConstruct
     public void afterPropertiesSet() {
+        if (miroTheme.equals("custom")) {
+            try {
+                customThemeColors = Files
+                        .readString(Path.of("/home/miroproxy/templates/2col/assets/css/themes/colors_custom.css"),
+                                StandardCharsets.UTF_8)
+                        .replaceAll("\\s+",
+                                "");
+            } catch (IOException e) {
+                log.error("Error reading custom colors CSS file", e);
+            }
+        }
         this.setSpecs();
         this.specs.stream().collect(Collectors.groupingBy(ProxySpec::getId)).forEach((id, duplicateSpecs) -> {
             if (duplicateSpecs.size() > 1)
@@ -231,6 +251,7 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
         try {
             File specsFile = new File(specsPath);
             if (specsFile.lastModified() > specsFileTs) {
+                log.info("Reloading specs.yaml file as it was modified");
                 specsMap = new HashMap<>();
                 maxInstancesCache = new HashMap<>();
                 Representer representer = new Representer(new DumperOptions());
@@ -251,9 +272,11 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
                     if (!containerEnv.containsKey("MIRO_LANG")) {
                         containerEnv.put("MIRO_LANG", miroLang);
                     }
-
                     if (!containerEnv.containsKey("MIRO_THEME")) {
                         containerEnv.put("MIRO_THEME", miroTheme);
+                        if (miroTheme.equals("custom")) {
+                            containerEnv.put("MIRO_CUSTOM_THEME_COLORS", customThemeColors);
+                        }
                     }
 
                     if (authentication.equals("none")) {

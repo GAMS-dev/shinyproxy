@@ -140,15 +140,16 @@ public abstract class BaseController {
         } else {
             map.put("showNavbar", defaultShowNavbar);
         }
-        
-        map.put("themeCss", "/assets/css/themes/" + environment.getProperty("proxy.theme", "default") + ".css");
+
+        map.put("themeCss", "/assets/css/themes/colors_" + environment.getProperty("proxy.theme", "default") + ".css");
         map.put("bootstrapCss", "/webjars/bootstrap/3.4.1/css/bootstrap.min.css");
         map.put("bootstrapJs", "/webjars/bootstrap/3.4.1/js/bootstrap.min.js");
         map.put("jqueryJs", "/webjars/jquery/3.7.1/jquery.min.js");
         map.put("handlebars", "/webjars/handlebars/4.7.7/handlebars.runtime.min.js");
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        boolean isLoggedIn = authentication != null && !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated();
+        boolean isLoggedIn = authentication != null && !(authentication instanceof AnonymousAuthenticationToken)
+                && authentication.isAuthenticated();
         map.put("isLoggedIn", isLoggedIn);
         map.put("isAdmin", userService.isAdmin(authentication));
         map.put("isSupportEnabled", isLoggedIn && defaultSupportAddress != null);
@@ -173,8 +174,8 @@ public abstract class BaseController {
         }
         map.put("appLogos", appLogos);
 
-
-        ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder
+                .currentRequestAttributes();
         HttpServletRequest httpServletRequest = servletRequestAttributes.getRequest();
         HttpServletResponse httpServletResponse = servletRequestAttributes.getResponse();
         map.put("request", httpServletRequest);
@@ -193,12 +194,12 @@ public abstract class BaseController {
             }
 
             return LogoInfo.builder()
-                .src(src)
-                .width(coalesce(proxySpec.getLogoWidth(), defaultLogoWidth))
-                .height(coalesce(proxySpec.getLogoHeight(), defaultLogoHeight))
-                .style(coalesce(proxySpec.getLogoStyle(), defaultLogoStyle))
-                .classes(coalesce(proxySpec.getLogoClasses(), defaultLogoClasses))
-                .build();
+                    .src(src)
+                    .width(coalesce(proxySpec.getLogoWidth(), defaultLogoWidth))
+                    .height(coalesce(proxySpec.getLogoHeight(), defaultLogoHeight))
+                    .style(coalesce(proxySpec.getLogoStyle(), defaultLogoStyle))
+                    .classes(coalesce(proxySpec.getLogoClasses(), defaultLogoClasses))
+                    .build();
         });
     }
 
@@ -226,7 +227,8 @@ public abstract class BaseController {
     }
 
     /**
-     * Checks whether starting a proxy violates the max instances of this spec and user.
+     * Checks whether starting a proxy violates the max instances of this spec and
+     * user.
      * This corresponds to the `max-instances` property of an app.
      */
     protected boolean validateMaxInstances(ProxySpec spec) {
@@ -236,15 +238,20 @@ public abstract class BaseController {
             return true;
         }
 
-        // note: there is a very small change that the user is able to start more instances than allowed, if the user
+        // note: there is a very small change that the user is able to start more
+        // instances than allowed, if the user
         // starts many proxies at once. E.g. in the following scenario:
         // - max proxies = 2
         // - user starts a proxy
-        // - user sends a start proxy request -> this function is called and returns true
-        // - just before this new proxy is added to the list of active proxies, the user sends a new start proxy request
-        // - again this new proxy is allowed, because there is still only one proxy in the list of active proxies
+        // - user sends a start proxy request -> this function is called and returns
+        // true
+        // - just before this new proxy is added to the list of active proxies, the user
+        // sends a new start proxy request
+        // - again this new proxy is allowed, because there is still only one proxy in
+        // the list of active proxies
         // -> the user has three proxies running.
-        // Because of chance that this happens is small and that the consequences are low, we accept this risk.
+        // Because of chance that this happens is small and that the consequences are
+        // low, we accept this risk.
         long currentAmountOfInstances = proxyService.getUserProxiesBySpecId(spec.getId()).count();
 
         return currentAmountOfInstances < maxInstances;
