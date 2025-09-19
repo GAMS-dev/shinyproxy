@@ -256,9 +256,12 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
                 log.info("Reloading specs.yaml file as it was modified");
                 specsMap = new HashMap<>();
                 maxInstancesCache = new HashMap<>();
-                Representer representer = new Representer(new DumperOptions());
+                LoaderOptions loaderOptions = new LoaderOptions();
+                DumperOptions dumperOptions = new DumperOptions();
+                Representer representer = new Representer(dumperOptions);
                 representer.getPropertyUtils().setSkipMissingProperties(true);
-                Yaml yaml = new Yaml(new Constructor(Dummy.class, new LoaderOptions()), representer);
+                Yaml yaml = new Yaml(new Constructor(Dummy.class, loaderOptions), representer, dumperOptions,
+                        loaderOptions);
                 specsFileTs = specsFile.lastModified();
                 Dummy obj = yaml.load(new FileInputStream(specsFile));
                 List<ShinyProxySpec> specsTmp = obj.getSpecs();
@@ -373,7 +376,8 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
             trackAppUrl = environment.getProperty("proxy.default-track-app-url", Boolean.class, false);
         }
         runtimeValues.add(new RuntimeValue(TrackAppUrl.inst, trackAppUrl));
-        // runtimeValues.add(new RuntimeValue(CustomAppDetailsKey.inst, new CustomAppDetails(proxy.getSpecExtension(ShinyProxySpecExtension.class).getCustomAppDetails())));
+        // runtimeValues.add(new RuntimeValue(CustomAppDetailsKey.inst, new
+        // CustomAppDetails(proxy.getSpecExtension(ShinyProxySpecExtension.class).getCustomAppDetails())));
 
         return runtimeValues;
     }
