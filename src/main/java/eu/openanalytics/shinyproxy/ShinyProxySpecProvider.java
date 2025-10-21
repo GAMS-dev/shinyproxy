@@ -183,6 +183,9 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
     @Value("${proxy.engine.anonymous-user}")
     private String engineAnonymousUser;
 
+    @Value("${proxy.engine.anonymous-admin-user:admin}")
+    private String engineAnonymousAdminUser;
+
     @Value("${proxy.engine.anonymous-pwd:${GMS_MIRO_ENGINE_ANONYMOUS_PWD:}}")
     private String engineAnonymousPass;
 
@@ -285,10 +288,13 @@ public class ShinyProxySpecProvider implements IProxySpecProvider {
                     }
 
                     if (authentication.equals("none")) {
+                        // ignore access groups when authentication is set to "none"
+                        specTmp.setAccessGroups(null);
                         if (anonymousReadonlyMode) {
                             containerEnv.put("MIRO_MODE", "readonly");
                         }
                         containerEnv.put("SHINYPROXY_NOAUTH", "true");
+                        containerEnv.put("SHINYPROXY_NOAUTH_ADMIN_NAME", engineAnonymousAdminUser);
                         containerEnv.put("MIRO_ENGINE_ANONYMOUS_USER", engineAnonymousUser);
                         containerEnv.put("MIRO_ENGINE_ANONYMOUS_PASS", engineAnonymousPass);
                     }
