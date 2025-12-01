@@ -40,7 +40,7 @@ proxy:
       http-headers:
         userId: "#{proxy.userId}"
       logo-url: mylogo.png
-      logo-widht: "50px"
+      logo-width: "50px"
       logo-height: "50px"
       logo-style: "abc"
       logo-classes: "abc"

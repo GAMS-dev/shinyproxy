@@ -50,10 +50,12 @@ Shiny.admin = {
                 {
                     data: 'server',
                     className: 'admin-monospace',
+                    render: DataTable.render.text(), // xss prevention
                 },
                 {
                     data: 'proxyId',
                     className: 'admin-monospace',
+                    render: DataTable.render.text(), // xss prevention
                 },
                 {
                     data: null,
@@ -61,59 +63,60 @@ Shiny.admin = {
                         if (type === 'display') {
                             return Shiny.ui.formatStatus(data.status);
                         }
-                        return data;
+                        return null;
                     }
                 },
                 {
                     data: 'userId',
                     className: 'admin-monospace',
+                    render: DataTable.render.text(), // xss prevention
                 },
                 {
                     data: 'appName',
                     className: 'admin-monospace',
+                    render: DataTable.render.text(), // xss prevention
                 },
                 {
                     data: 'instanceName',
                     className: 'admin-monospace',
+                    render: DataTable.render.text(), // xss prevention
                 },
                 {
                     data: 'endpoint',
                     className: 'admin-monospace',
+                    render: DataTable.render.text(), // xss prevention
                 },
                 {
                     data: 'uptime',
                     className: 'admin-monospace',
+                    render: DataTable.render.text(), // xss prevention
                 },
                 {
                     data: 'lastHeartBeat',
                     className: 'admin-monospace',
+                    render: DataTable.render.text(), // xss prevention
                 },
                 {
                     data: 'imageName',
                     className: 'admin-monospace',
+                    render: DataTable.render.text(), // xss prevention
                 },
                 {
                     data: 'imageTag',
                     className: 'admin-monospace',
+                    render: DataTable.render.text(), // xss prevention
                 },
                 {
                     data: null,
                     render: function (data, type) {
                         if (type === 'display') {
-                            return `
-                               <div class="btn-group btn-group-xs" style="width: 100px; display:block;" role="group">
-                                    <button type="button" class="btn btn-primary"
-                                            onclick="Shiny.admin.showAppDetails('${data.displayName}', '${data.instanceName}', '${data.proxyId}');">
-                                        Details
-                                    </button>
-                                    <button type="button" class="btn btn-primary"
-                                            onclick="Shiny.instances.eventHandlers.onDeleteInstance(event, '${data.instanceName}', '${data.proxyId}');">
-                                        Stop
-                                    </button>
-                                </div>
-                            `;
+                            return Handlebars.templates.admin_actions({
+                                displayName: data.displayName,
+                                instanceName: data.instanceName,
+                                proxyId: data.proxyId
+                            })
                         }
-                        return data;
+                        return null;
                     },
                 },
             ]

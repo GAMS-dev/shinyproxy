@@ -87,6 +87,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static eu.openanalytics.shinyproxy.AppRequestInfo.INSTANCE_NAME_PATTERN;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
 @Controller
@@ -258,6 +259,11 @@ public class AppController extends BaseController {
         if (!userService.canAccess(spec)) {
             return ApiResponse.failForbidden();
         }
+
+        if (appInstanceName.length() > 64 || !INSTANCE_NAME_PATTERN.matcher(appInstanceName).matches()) {
+            return ApiResponse.fail("Invalid app instance name");
+        }
+
         Proxy proxy = findUserProxy(specId, appInstanceName);
         if (proxy != null) {
             return ApiResponse.fail("You already have an instance of this app with the given name");

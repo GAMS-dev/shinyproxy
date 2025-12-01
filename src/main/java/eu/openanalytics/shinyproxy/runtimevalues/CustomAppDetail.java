@@ -20,6 +20,8 @@
  */
 package eu.openanalytics.shinyproxy.runtimevalues;
 
+import eu.openanalytics.containerproxy.model.spec.ProxySpec;
+import eu.openanalytics.containerproxy.util.CleanHtml;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,5 +41,18 @@ public class CustomAppDetail {
     String name;
     String description;
     String value;
+
+    public void setDescription(String description) {
+        this.description = CleanHtml.clean(description);
+    }
+
+    public static class CustomAppDetailBuilder {
+
+        public CustomAppDetailBuilder description(String description) {
+            this.description = CleanHtml.clean(description);
+            return this;
+        }
+
+    }
 
 }

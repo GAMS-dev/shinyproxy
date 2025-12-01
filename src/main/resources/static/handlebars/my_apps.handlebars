@@ -5,18 +5,22 @@
             <a href="{{ url }}" class="app-instance list-group-item">
                 <span class="app-instance-title">{{ instanceName }}</span>
                 <div class="btn-group btn-group-xs" role="group">
-                    <button type="button" class="btn btn-primary"
-                            onclick="Shiny.common.showAppDetails(event, '{{ displayName }}', '{{ instanceName }}', '{{ proxyId }}');">
+                    <button type="button" class="btn btn-primary app-details-btn"
+                            data-display-name="{{ displayName }}"
+                            data-instance-name="{{ instanceName }}"
+                            data-proxy-id="{{ proxyId }}">
                         Details
                     </button>
-                    <button type="button" class="btn btn-primary"
-                            onclick="Shiny.instances.eventHandlers.onDeleteInstance(event, '{{ instanceName }}', '{{ proxyId }}');">
+                    <button type="button" class="btn btn-primary app-stop-btn"
+                            data-instance-name="{{ instanceName }}"
+                            data-proxy-id="{{ proxyId }}">
                         Stop
                     </button>
                     {{#if ../../pauseSupported}}
                         {{#if uptime}}
-                            <button type="button" class="btn btn-primary"
-                                    onclick="Shiny.instances.eventHandlers.onPauseApp(event, '{{ instanceName }}', '{{ proxyId }}');">
+                            <button type="button" class="btn btn-primary app-pause-btn"
+                                    data-instance-name="{{ instanceName }}"
+                                    data-proxy-id="{{ proxyId }}">
                                 Pause
                             </button>
                         {{/if}}

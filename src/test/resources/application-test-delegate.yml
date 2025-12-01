@@ -30,4 +30,4 @@ proxy:
     - id: 01_hello
       display-name: 01-hello
       description: my description
-      minium-seats-available: 1
+      minimum-seats-available: 1

@@ -22,6 +22,7 @@ package eu.openanalytics.shinyproxy;
 
 import eu.openanalytics.containerproxy.model.spec.ProxySpec;
 import eu.openanalytics.containerproxy.service.UserService;
+import eu.openanalytics.containerproxy.util.CleanHtml;
 import eu.openanalytics.shinyproxy.external.ExternalAppSpecExtension;
 import lombok.Value;
 import org.springframework.stereotype.Component;
@@ -122,6 +123,9 @@ public class Thymeleaf {
         );
     }
 
+    public String cleanHtml(String html) {
+        return CleanHtml.clean(html);
+    }
 
     @Value
     public static class GroupedProxySpecs {

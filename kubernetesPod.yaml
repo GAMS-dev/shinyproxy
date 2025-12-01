@@ -4,6 +4,7 @@ metadata:
   labels:
     ci: shinyproxy-build
 spec:
+  hostUsers: false
   volumes:
     - name: docker-socket
       emptyDir: { }

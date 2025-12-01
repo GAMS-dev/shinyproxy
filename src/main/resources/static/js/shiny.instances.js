@@ -68,8 +68,7 @@ Shiny.instances = {
             }
             Shiny.common.loadAppDetails(appName, appInstanceName, proxyId);
         },
-        // TODO rename to onStopApp ?
-        onDeleteInstance: async function (event, appInstanceName, proxyId) {
+        onStopApp: async function (event, appInstanceName, proxyId) {
             if (event) {
                 event.preventDefault();
             }

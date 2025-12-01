@@ -31,7 +31,7 @@ import eu.openanalytics.containerproxy.model.runtime.runtimevalues.HeartbeatTime
 import eu.openanalytics.containerproxy.model.runtime.runtimevalues.InstanceIdKey;
 import eu.openanalytics.containerproxy.model.runtime.runtimevalues.MaxLifetimeKey;
 import eu.openanalytics.containerproxy.model.runtime.runtimevalues.ParameterNamesKey;
-import eu.openanalytics.containerproxy.service.hearbeat.ActiveProxiesService;
+import eu.openanalytics.containerproxy.service.heartbeat.ActiveProxiesService;
 import eu.openanalytics.shinyproxy.runtimevalues.AppInstanceKey;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

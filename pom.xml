@@ -5,7 +5,7 @@
 
     <groupId>eu.openanalytics</groupId>
     <artifactId>shinyproxy</artifactId>
-    <version>3.2.0</version>
+    <version>3.2.2</version>
     <packaging>jar</packaging>
     <inceptionYear>2016</inceptionYear>
 
@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.5</version>
+        <version>3.4.11</version>
         <relativePath/>
     </parent>
 
@@ -31,15 +31,18 @@
         <maven.compiler.target>21</maven.compiler.target>
         <resource.delimiter>&amp;</resource.delimiter>
         <!-- Dependency versions -->
-        <containerproxy.version>1.2.0</containerproxy.version>
-        <spring-boot.version>3.4.5</spring-boot.version>
+        <containerproxy.version>1.2.2</containerproxy.version>
+        <spring-boot.version>3.4.11</spring-boot.version>
         <datatables.version>1.13.5</datatables.version>
         <datatables-buttons.version>2.4.1</datatables-buttons.version>
         <datatables-responsive.version>2.2.7</datatables-responsive.version>
         <handlebars.version>4.7.7</handlebars.version>
+        <sqlite-jdbc.version>3.50.3.0</sqlite-jdbc.version>
+        <commons-lang.version>3.18.0</commons-lang.version>
         <!-- Plugin versions -->
         <maven.license-plugin.version>4.6</maven.license-plugin.version>
         <maven.build-helper-maven.plugin.version>3.6.0</maven.build-helper-maven.plugin.version>
+        <maven.dependency-check-plugin.version>12.1.7</maven.dependency-check-plugin.version>
     </properties>
 
     <distributionManagement>
@@ -129,6 +132,16 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>${sqlite-jdbc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -324,7 +337,7 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
-                        <version>9.0.9</version>
+                        <version>${maven.dependency-check-plugin.version}</version>
                         <configuration>
                             <suppressionFiles>
                                 <suppressionFile>owasp-suppression.xml</suppressionFile>

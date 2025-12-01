@@ -4,21 +4,25 @@
             <div class="app-instance list-group-item">
                 <b class="active-app-instance-title">{{ instanceName }}</b>
                 <div class="btn-group btn-group-xs" role="group">
-                    <button type="button" class="btn btn-primary"
-                            onclick="Shiny.instances.eventHandlers.showAppDetails(event, '{{ appName }}', '{{ instanceName }}', '{{ proxyId }}');">
+                    <button type="button" class="btn btn-primary instances-details-btn"
+                            data-display-name="{{ displayName }}"
+                            data-instance-name="{{ instanceName }}"
+                            data-proxy-id="{{ proxyId }}">
                         Details
                     </button>
-                    <button type="button" class="btn btn-primary"
-                            onclick="Shiny.instances.eventHandlers.onDeleteInstance(event, '{{ instanceName }}', '{{ proxyId }}');">
+                    <button type="button" class="btn btn-primary app-stop-btn"
+                            data-instance-name="{{ instanceName }}"
+                            data-proxy-id="{{ proxyId }}">
                         Stop
                     </button>
-                    <button type="button" class="btn btn-primary btn-restart-app"
-                            onclick="Shiny.instances.eventHandlers.onRestartInstance(event);">Restart
+                    <button type="button" class="btn btn-primary app-restart-btn">
+                        Restart
                     </button>
                     {{#if ../pauseSupported}}
                         {{#if uptime}}
-                            <button type="button" class="btn btn-primary"
-                                    onclick="Shiny.instances.eventHandlers.onPauseApp(event, '{{ instanceName }}', '{{ proxyId }}');">
+                            <button type="button" class="btn btn-primary app-pause-btn"
+                                    data-instance-name="{{ instanceName }}"
+                                    data-proxy-id="{{ proxyId }}">
                                 Pause
                             </button>
                         {{/if}}
@@ -30,18 +34,22 @@
             <a target="{{ ../target }}" href="{{ url }}" class="app-instance list-group-item">
                 <span class="app-instance-title">{{ instanceName }}</span>
                 <div class="btn-group btn-group-xs" role="group">
-                    <button type="button" class="btn btn-primary"
-                            onclick="Shiny.instances.eventHandlers.showAppDetails(event, '{{ appName }}', '{{ instanceName }}', '{{ proxyId }}');">
+                    <button type="button" class="btn btn-primary instances-details-btn"
+                            data-display-name="{{ displayName }}"
+                            data-instance-name="{{ instanceName }}"
+                            data-proxy-id="{{ proxyId }}">
                         Details
                     </button>
-                    <button type="button" class="btn btn-primary"
-                            onclick="Shiny.instances.eventHandlers.onDeleteInstance(event, '{{ instanceName }}', '{{ proxyId }}');">
+                    <button type="button" class="btn btn-primary app-stop-btn"
+                            data-instance-name="{{ instanceName }}"
+                            data-proxy-id="{{ proxyId }}">
                         Stop
                     </button>
                     {{#if ../pauseSupported}}
                         {{#if uptime}}
-                            <button type="button" class="btn btn-primary"
-                                    onclick="Shiny.instances.eventHandlers.onPauseApp(event, '{{ instanceName }}', '{{ proxyId }}');">
+                            <button type="button" class="btn btn-primary app-pause-btn"
+                                    data-instance-name="{{ instanceName }}"
+                                    data-proxy-id="{{ proxyId }}">
                                 Pause
                             </button>
                         {{/if}}

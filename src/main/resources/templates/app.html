@@ -65,8 +65,7 @@
             <div class="loading-txt">
                 This app has been stopped, you can now close this tab.<br><br>
                 <span class="refreshButton">
-				<button class="btn btn-default btn-restart-app"
-                        onClick="Shiny.instances.eventHandlers.onRestartInstance()">Restart app</button>
+				<button class="btn btn-default app-restart-btn">Restart app</button>
 			</span>
             </div>
         </div>
@@ -74,8 +73,7 @@
             <div class="loading-txt">
                 This app has been paused, you can now close this tab.<br><br>
                 <span class="refreshButton">
-				<button class="btn btn-default btn-restart-app"
-                        onClick="Shiny.instances.eventHandlers.onRestartInstance()">Resume app</button>
+				<button class="btn btn-default app-restart-btn">Resume app</button>
 			</span>
             </div>
         </div>
@@ -96,7 +94,7 @@
             <div class="loading-txt">
                 Failed to reload <span th:text="${appTitle}"></span><br><br>
                 <span class="refreshButton">
-				<button class="btn btn-default" onClick="window.location.reload()">Refresh page</button>
+				<button class="btn btn-default refresh-page-btn">Refresh page</button>
 			</span>
             </div>
         </div>
@@ -105,7 +103,7 @@
                 Failed to start app <span th:text="${appTitle}"></span><br><br>
                 <div id="startFailedMessage"></div>
                 <span class="refreshButton">
-				<button class="btn btn-default" onClick="window.location.reload()">Try again</button>
+				<button class="btn btn-default refresh-page-btn">Try again</button>
 			</span>
             </div>
         </div>
@@ -113,8 +111,7 @@
             <div class="loading-txt">
                 This app has crashed and has been stopped.<br><br>
                 <span class="refreshButton">
-				<button class="btn btn-default btn-restart-app"
-                        onClick="Shiny.instances.eventHandlers.onRestartInstance()">Restart app</button>
+				<button class="btn btn-default app-restart-btn">Restart app</button>
 			</span>
             </div>
         </div>
@@ -157,7 +154,7 @@
                                             th:text="${value}"></option>
                                 </select>
                                 <span class="help-block" th:if="${parameterDefinition.getDescription() != null}"
-                                      th:utext="${parameterDefinition.getDescription()}"></span>
+                                      th:utext="${@thymeleaf.cleanHtml(parameterDefinition.getDescription())}"></span>
                             </div>
                         </div>
 
