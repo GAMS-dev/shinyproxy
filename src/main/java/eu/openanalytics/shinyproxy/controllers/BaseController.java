@@ -114,6 +114,8 @@ public abstract class BaseController {
     @Inject
     private IContainerBackend backend;
     @Inject
+    protected Thymeleaf thymeleaf;
+    @Inject
     protected SpecExpressionResolver expressionResolver;
 
     @PostConstruct
@@ -169,7 +171,7 @@ public abstract class BaseController {
         map.put("bootstrapCss", "/css/bootstrap.css");
         map.put("bootstrapJs", "/js/bootstrap.js");
         map.put("jqueryJs", "/webjars/jquery/3.7.1/jquery.min.js");
-        map.put("handlebars", "/webjars/handlebars/4.7.7/handlebars.runtime.min.js");
+        map.put("handlebars", "/webjars/handlebars/4.7.9/dist/handlebars.runtime.min.js");
 
         boolean isLoggedIn = authentication != null && !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated();
         map.put("isLoggedIn", isLoggedIn);
@@ -184,7 +186,7 @@ public abstract class BaseController {
         map.put("pauseSupported", backend.supportsPause());
         map.put("spInstance", identifierService.instanceId);
         map.put("allowTransferApp", allowTransferApp);
-        map.put("notificationMessage", environment.getProperty("proxy.notification-message"));
+        map.put("notificationMessage", thymeleaf.cleanHtml(environment.getProperty("proxy.notification-message")));
         map.put("bodyClasses", bodyClasses);
 
         List<ProxySpec> apps = proxyService.getUserSpecs();
